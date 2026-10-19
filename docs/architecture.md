@@ -30,8 +30,9 @@ inspection boundary. Formatting functions return strings; callers own I/O.
 
 ## Repository topology
 
-`/srv/dev/projects/gscan` is a single Git repository on `main`. No GitHub remote
-has been configured. Sibling directories are scan inputs, not dependencies or
+`/srv/dev/projects/gscan` is a single Git repository on `main`, tracking
+`origin/main` in the private GitHub repository `AindriuB/gscan`. Clone with
+`git clone git@github.com:AindriuB/gscan.git`. Sibling directories are scan inputs, not dependencies or
 repositories that must be cloned to build gscan.
 
 Cargo source, lockfile, README, agent guides and docs are versioned.
