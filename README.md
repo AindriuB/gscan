@@ -1,35 +1,59 @@
 # gscan
 
-A small Rust command-line tool for surveying local Git repositories.
+Survey local Git repositories from the command line. See where unfinished work
+and unpushed commits are waiting before ending a development session.
 
-## First milestone
+**Status:** design and Cargo scaffold only. Scanning is not implemented yet.
 
-Scan immediate subdirectories of a supplied directory and show each repository's:
-
-- Name and current branch, including detached HEAD.
-- Number of changed files, including untracked files.
-- Commits ahead of and behind its locally known upstream, when configured.
-
-Use the installed Git command and Rust standard library. Report inspection errors
-clearly and handle repositories without commits or an upstream. Remote status
-uses locally cached refs; scanning does not automatically fetch.
-
-Planned usage:
+## Planned usage
 
 ```sh
 gscan /srv/dev/projects
+gscan                     # scan immediate children of the current directory
+gscan --help
+gscan --version
 ```
 
-Possible later additions: `--dirty`, JSON output, and explicit `--fetch`.
+Illustrative output, not a result from the current program:
+
+```text
+REPOSITORY     BRANCH          CHANGES  AHEAD  BEHIND
+agent-gateway  feature/tools         3      2       0
+data-prism     main                  0      0       0
+jresolve      main                  1      -       -
+```
+
+CHANGES counts changed paths, including untracked files. A dash means no upstream
+comparison is available. Counts use locally cached Git refs, never an automatic
+fetch. A dirty repository is a normal result, not an error.
+
+V1 inspects immediate child directories, including linked worktrees. It skips
+symlinks, ordinary directories and bare repositories. It does not recurse or
+modify repositories. See [the CLI contract](docs/design.md) for edge cases.
 
 ## Development
 
-Requires stable Rust and Git. This repository currently contains the Cargo starter
-program; repository scanning is not implemented yet.
+Requires stable Rust (edition 2024) and Git on PATH. Linux is the initial target.
+The implementation will use the Rust standard library and installed Git, with
+no third-party Rust dependencies in v1.
 
 ```sh
 cargo run
-cargo test
+cargo test --offline
 cargo fmt -- --check
-cargo clippy -- -D warnings
+cargo clippy --offline -- -D warnings
 ```
+
+Currently `cargo run` prints the Cargo starter greeting. Once implemented, use
+`cargo run -- /srv/dev/projects`, or `cargo install --path .` to install locally.
+
+## Project documents
+
+- [Design and CLI contract](docs/design.md)
+- [Architecture](docs/architecture.md)
+- [Conventions](docs/conventions.md)
+- [Workflow](docs/workflow.md)
+- [Implementation plan](docs/plan/PLAN.md)
+
+Claude Kit is installed locally in `.claude/` and is not versioned. To recreate
+it from the existing shared kit, run `~/.claude-kit/install.sh /path/to/gscan`.
