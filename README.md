@@ -9,6 +9,7 @@ and unpushed commits are waiting before ending a development session.
 
 ```sh
 gscan /srv/dev/projects
+gscan --dirty /srv/dev/projects
 gscan                     # scan immediate children of the current directory
 gscan --help
 gscan --version
@@ -26,6 +27,10 @@ jresolve      main                  1      -       -
 CHANGES counts changed paths, including untracked files. A dash means no upstream
 comparison is available. Counts use locally cached Git refs, never an automatic
 fetch. A dirty repository is a normal result, not an error.
+
+Use `--dirty` to show only repositories with staged, unstaged, conflicted or
+untracked paths. Clean repositories with unpushed commits are excluded. Errors
+are still reported even when successful rows are filtered out.
 
 V1 inspects immediate child directories, including linked worktrees. It skips
 symlinks, ordinary directories and bare repositories. It does not recurse or
@@ -46,7 +51,7 @@ cargo clippy --offline -- -D warnings
 
 Use `cargo install --path . --offline` to install `gscan` locally.
 
-Verification covers 20 unit and integration tests, including local upstreams,
+Verification covers 23 unit and integration tests, including local upstreams,
 linked worktrees, merge conflicts, submodules, unusual filenames and partial
 failures. The first homelab smoke scan inspected 13 repositories successfully.
 

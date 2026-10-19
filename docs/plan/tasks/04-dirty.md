@@ -1,6 +1,6 @@
 # 04 — Filter repositories with unfinished changes
 
-**Status:** In progress
+**Status:** Complete / merged (verified at `69b7104`)
 
 **Depends on:** 03 (merged)
 

@@ -15,14 +15,24 @@ Verified implementation: `445a232`, measured 2026-10-19. All 20 tests pass;
 rustfmt and Clippy (all targets, warnings denied) pass. A live read-only scan
 successfully inspected 13 immediate child repositories in `/srv/dev/projects`.
 
+## Follow-up — complete
+
+| ID | Task | Depends on | Status |
+|---|---|---|---|
+| 04 | [Dirty repository filter](tasks/04-dirty.md) | 03 | Complete / merged |
+
+Verified implementation: `69b7104`, measured 2026-10-19. All 23 tests,
+formatting and all-target Clippy pass. The live filtered scan returned two
+repositories with changed paths and excluded clean repositories.
+
 ## Now
 
-Use v1 on the homelab. No additional implementation task is in progress.
+Use `--dirty` for a quick unfinished-work check. No implementation task is in progress.
 
 ## Next
 
-Decide whether `--dirty` or JSON output would save real work after using the table.
-Neither is committed for implementation.
+Consider JSON output if scripts need to consume scan results. It is not yet
+committed for implementation.
 
 ## Someday
 

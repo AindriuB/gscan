@@ -2,6 +2,19 @@
 
 Completed work only, newest first. Consult HISTORY-INDEX.md before reading entries.
 
+## 2026-10-19 — Dirty repository filter
+
+Task 04 adds `--dirty` to show only repositories with changed paths. Clean
+repositories with unpushed commits are excluded. Filtering preserves inspection
+errors and exit codes, and distinguishes empty roots from clean-only scans.
+
+**Validation:** implementation `69b7104` passes 23 tests, formatting and all-target
+Clippy with warnings denied. Three new integration tests failed before the feature
+was implemented and now pass. The live homelab scan returned two dirty repositories.
+
+**Cost:** filtering must happen after inspection, so a hidden clean row cannot hide
+a failure elsewhere. This option reduces output, not scan work or runtime.
+
 ## 2026-10-19 — First usable repository scan
 
 Tasks 01–03 are merged at `445a232`. The CLI scans immediate child repositories,

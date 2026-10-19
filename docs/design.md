@@ -9,11 +9,17 @@ This contract is implemented in v1 and verified by unit and integration tests.
 
 ## Arguments
 
-`gscan [DIRECTORY]` scans the supplied directory, defaulting to the current one.
+`gscan [--dirty] [DIRECTORY]` scans the supplied directory, defaulting to the current one.
 Accept `--help`, `-h`, and `--version` as standalone invocations. Support `--`
 before a positional path beginning with a hyphen. Reject unknown options and
 extra positional arguments with a short diagnostic and usage on stderr.
 Use OS-native arguments and paths rather than requiring UTF-8 filesystem names.
+
+`--dirty` filters successful rows to changed-path counts greater than zero; ahead
+or behind commits alone do not qualify. It may appear before or after DIRECTORY,
+but before `--`, and repeating it is harmless. `gscan -- --dirty` scans a directory
+named `--dirty`. Help/version remain standalone. Every candidate is inspected;
+filtering does not suppress failures or change exit codes.
 
 ## Discovery
 
@@ -27,6 +33,10 @@ An unreadable scan root is fatal. An unreadable directory entry or a candidate
 whose Git metadata is broken produces a diagnostic and scanning continues for
 other entries. An empty scan succeeds with `No repositories found.` on stdout.
 A root containing only failed candidates must not be described as empty.
+With `--dirty`, an error-free scan with repositories but no matching rows prints
+`No dirty repositories found.`. A genuinely empty root keeps the existing empty
+message. If any inspection fails and no rows match, stdout has no success/empty
+message; stderr and exit 1 report the failure.
 
 ## Repository status
 
@@ -96,5 +106,5 @@ Test that hostile inherited Git environment variables do not redirect the scan.
 
 ## Deferred features
 
-`--dirty`, JSON output, recursive discovery, colour, parallel scans and explicit
+JSON output, recursive discovery, colour, parallel scans and explicit
 fetch are separate future decisions. First ship and use the small table command.
