@@ -43,6 +43,21 @@ class PackagingTests(unittest.TestCase):
                 self.assertEqual(metadata["target"], target)
                 self.assertEqual(files[f"{prefix}/{package.executable(target)}"], b"test binary")
 
+    def test_windows_checkout_line_endings_are_normalized(self):
+        checkout = self.root / "checkout"
+        (checkout / "packaging").mkdir(parents=True)
+        (checkout / "docs").mkdir()
+        (checkout / "LICENSE").write_bytes(b"MIT License\r\nCopyright\r\n")
+        (checkout / "packaging/README.md").write_bytes(b"README\r\n")
+        (checkout / "docs/installation.md").write_bytes(b"INSTALL\r\n")
+        binary = self.root / "gscan.exe"
+        binary.write_bytes(b"binary")
+        files = package.contents(binary, "x86_64-pc-windows-msvc", self.version,
+                                 self.commit, "rustc test", 1700000000, root=checkout)
+        self.assertEqual(files["LICENSE"], b"MIT License\nCopyright\n")
+        self.assertEqual(files["README.md"], b"README\n")
+        self.assertEqual(files["INSTALL.md"], b"INSTALL\n")
+
     def test_corrupted_download_fails_checksum(self):
         target = next(iter(package.TARGETS))
         archive = self.make(target)

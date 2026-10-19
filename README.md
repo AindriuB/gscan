@@ -79,8 +79,15 @@ python tests/validate_json.py target/debug/gscan
 ```
 
 On Windows the executable path ends in `.exe`. Install from source with
-`cargo install --path . --offline`. Versioned binary packaging is a separate
-[backlog task](docs/plan/tasks/06-packaging.md); no release archives are published yet.
+`cargo install --path . --offline`, or use the verified release archives described
+in the [installation guide](docs/installation.md). Archives cover Linux x86_64
+(glibc 2.35+), macOS 14+ Apple Silicon and Windows x86_64; Rust is not needed to
+run them. Git is still required. Release automation creates private drafts for
+review; it does not publish them automatically.
+
+MIT-licensed; see [LICENSE](LICENSE). Repository and release visibility stay private.
+For build scripts, checksum verification and the tag workflow, see
+[packaging maintenance](docs/packaging.md).
 
 Timeout cleanup uses `/bin/kill` for Unix process groups and `taskkill` for Windows
 process trees, then kills/reaps the direct child. These helpers must be available
@@ -95,6 +102,7 @@ cleanup are outside the per-command timeout; this is not a whole-scan deadline.
 - [Conventions](docs/conventions.md)
 - [Workflow](docs/workflow.md)
 - [Implementation plan and backlog](docs/plan/PLAN.md)
+- [Installation](docs/installation.md) and [release maintenance](docs/packaging.md)
 
 Claude Kit is installed locally in `.claude/` and is not versioned. Recreate it
 with `~/.claude-kit/install.sh /path/to/gscan` from the existing shared kit.

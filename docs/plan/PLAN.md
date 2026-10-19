@@ -37,19 +37,20 @@ Windows ([run](https://github.com/AindriuB/gscan/actions/runs/39233162807)).
 Platform-specific fixtures account for different test counts. One ignored test
 function is an explicitly launched subprocess fixture, not missing coverage.
 
-## Backlog
+## Packaging — in progress
 
 | ID | Task | Depends on | Status |
 |---|---|---|---|
-| 06 | [Packaging and releases](tasks/06-packaging.md) | 05 | Backlog / not started |
+| 06 | [Packaging and releases](tasks/06-packaging.md) | 05 | In progress: native archive verification |
 
-Task 06 covers versioned archives, checksums, supported targets, installation,
-release automation and license/version decisions. No release publication is
-implied by this backlog entry.
+Task 06 implements MIT-licensed v0.1.0 archives, SHA256SUMS, installation docs
+and tag-triggered private draft releases. Publishing a draft remains a separate
+maintainer action.
 
 ## Now
 
-Use the extended scanner; no implementation task is in progress.
+Verify all native archives, create the v0.1.0 tag, and confirm its private draft
+release and downloaded checksums.
 
 ## Someday
 

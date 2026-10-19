@@ -71,9 +71,9 @@ def contents(binary, target, release_version, commit, compiler, epoch, root=ROOT
     }
     return {
         executable(target): binary.read_bytes(),
-        "LICENSE": (root / "LICENSE").read_bytes(),
-        "README.md": (root / "packaging/README.md").read_bytes(),
-        "INSTALL.md": (root / "docs/installation.md").read_bytes(),
+        "LICENSE": (root / "LICENSE").read_text(encoding="utf-8").encode("utf-8"),
+        "README.md": (root / "packaging/README.md").read_text(encoding="utf-8").encode("utf-8"),
+        "INSTALL.md": (root / "docs/installation.md").read_text(encoding="utf-8").encode("utf-8"),
         "BUILD.json": (json.dumps(metadata, indent=2) + "\n").encode(),
     }
 

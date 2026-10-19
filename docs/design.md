@@ -160,5 +160,6 @@ fixture verifies deadlines with output exceeding a pipe buffer. Python independe
 parses JSON. Native CI covers Linux, macOS and Windows; Linux-only tests exercise
 invalid filename bytes and `/dev/full`.
 
-Packaging is tracked separately in task 06. Cancellation signals, whole-scan
+Packaging is implemented by task 06 with a manual publication gate; see
+[packaging.md](packaging.md). Cancellation signals, whole-scan
 budgets, fetch deduplication and colour are not part of this feature set.

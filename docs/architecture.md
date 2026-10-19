@@ -65,3 +65,12 @@ The precise behavioural contract and known limits are in [design.md](design.md).
   on reader threads reaching EOF after an inherited handle escapes.
 - Keep JSON serialization dependency-free; independently parse outputs with Python.
 - Treat packaging as a separate backlog task, not an implicit public release.
+
+## Packaging boundary
+
+`scripts/package.py` builds and verifies versioned archives from a native release
+binary. `scripts/draft_release.py` accepts only matching-tag private drafts and
+refuses published releases. `.github/workflows/release.yml` builds the three
+native packages, assembles checksums, and limits repository-write permission to
+the tag-triggered draft job. User installation is documented separately from
+maintainer release automation; see [packaging.md](packaging.md).
