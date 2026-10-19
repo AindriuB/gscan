@@ -4,7 +4,7 @@
      If you are adding detail here, it belongs in docs/ instead. -->
 
 Single-repository Rust CLI for surveying local Git repositories. Build from this
-root with Cargo. The current code is a starter; README.md defines the first milestone.
+root with Cargo. V1 scanning is implemented; README.md describes usage and limits.
 
 ## Read on demand, not up front
 
@@ -38,7 +38,7 @@ the same steps when those commands are unavailable.
 
 `cargo fmt -- --check`, `cargo clippy -- -D warnings`, and `cargo test`.
 Test repository scanning against temporary Git repositories, including dirty,
-unborn and detached HEAD states and missing upstreams, once implemented.
+unborn and detached HEAD states and missing upstreams.
 
 ## Rules that hold everywhere
 

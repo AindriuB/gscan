@@ -1,6 +1,6 @@
 # 03 — CLI integration and end-to-end checks
 
-**Status:** Not started
+**Status:** Complete / merged (verified together at `445a232`)
 
 **Depends on:** 02
 

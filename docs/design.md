@@ -5,7 +5,7 @@
 Answer “where have I left work?” with one command over a projects directory.
 V1 is a synchronous, read-only CLI. No server, database, background process,
 network calls, fetching, cleanup, recursive discovery or automatic Git fixes.
-The design describes intended behaviour; the executable is still a scaffold.
+This contract is implemented in v1 and verified by unit and integration tests.
 
 ## Arguments
 

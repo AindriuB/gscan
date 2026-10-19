@@ -3,10 +3,9 @@
 ## Current state
 
 One Rust binary crate, edition 2024, with no third-party dependencies.
-`src/main.rs` currently prints the Cargo starter greeting. The following module
-layout is the intended first implementation, not existing code.
+The CLI, scanner, Git inspection and formatting modules implement the v1 contract.
 
-## Planned components
+## Components
 
 | File | Responsibility |
 |---|---|

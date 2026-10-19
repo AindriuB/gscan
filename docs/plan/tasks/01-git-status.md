@@ -1,6 +1,6 @@
 # 01 — Git status model and inspection
 
-**Status:** Not started
+**Status:** Complete / merged (verified together at `445a232`)
 
 **Depends on:** None
 

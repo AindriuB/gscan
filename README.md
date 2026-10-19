@@ -3,9 +3,9 @@
 Survey local Git repositories from the command line. See where unfinished work
 and unpushed commits are waiting before ending a development session.
 
-**Status:** design and Cargo scaffold only. Scanning is not implemented yet.
+**Status:** v1 implemented and verified on Linux.
 
-## Planned usage
+## Usage
 
 ```sh
 gscan /srv/dev/projects
@@ -14,7 +14,7 @@ gscan --help
 gscan --version
 ```
 
-Illustrative output, not a result from the current program:
+Example output (repository names and counts are illustrative):
 
 ```text
 REPOSITORY     BRANCH          CHANGES  AHEAD  BEHIND
@@ -34,18 +34,25 @@ modify repositories. See [the CLI contract](docs/design.md) for edge cases.
 ## Development
 
 Requires stable Rust (edition 2024) and Git on PATH. Linux is the initial target.
-The implementation will use the Rust standard library and installed Git, with
+The implementation uses the Rust standard library and installed Git, with
 no third-party Rust dependencies in v1.
 
 ```sh
-cargo run
+cargo run -- /srv/dev/projects
 cargo test --offline
 cargo fmt -- --check
 cargo clippy --offline -- -D warnings
 ```
 
-Currently `cargo run` prints the Cargo starter greeting. Once implemented, use
-`cargo run -- /srv/dev/projects`, or `cargo install --path .` to install locally.
+Use `cargo install --path . --offline` to install `gscan` locally.
+
+Verification covers 20 unit and integration tests, including local upstreams,
+linked worktrees, merge conflicts, submodules, unusual filenames and partial
+failures. The first homelab smoke scan inspected 13 repositories successfully.
+
+Counts are based on cached refs and may be stale until you fetch separately.
+V1 runs Git sequentially without process timeouts and buffers each status response;
+very large repositories can take time and memory. Linux is the tested platform.
 
 ## Project documents
 
