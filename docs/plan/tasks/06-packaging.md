@@ -10,7 +10,7 @@
 
 ## Agreed scope
 
-Prepare `v0.1.0` using MIT licensing, with repository/releases remaining private.
+Prepare `v0.1.0` using MIT licensing, without changing repository visibility.
 Create a draft after archive verification; publishing the draft is a separate
 maintainer action. Do not publish to crates.io or change repository visibility.
 
@@ -31,7 +31,7 @@ Branch/PR/manual workflows build, verify and retain CI artifacts. Only a pushed
 `v*` tag can trigger draft creation. Require exact Cargo/tag/binary version and
 source-commit matches. Restrict contents-write permission to the draft job; pin
 actions to commits and avoid persisted checkout credentials. Refuse to modify
-published releases, refuse public repositories, and allow safe draft retries.
+published releases, support public and private repositories, and allow safe draft retries.
 
 ## Acceptance
 
@@ -55,12 +55,12 @@ package tests must pass on the baseline runner before the release is tagged.
 ## Completion evidence
 
 Released source: `31459751f03eae012bccad7e4cc1f23af43ae97b`, tagged `v0.1.0`.
-The [tag workflow](https://github.com/AindriuB/gscan/actions/runs/39235973876)
+The tag workflow
 passed native formatting, Clippy, Rust and 13 packaging tests, archive smoke
 checks and checksum assembly on all three platforms. Linux runs 30 Rust tests;
 platform-specific fixtures account for different counts elsewhere.
 
-The [private draft](https://github.com/AindriuB/gscan/releases/tag/untagged-23980aa2e1baf68bd439)
+The draft
 contains exactly three archives and SHA256SUMS. All downloaded archive hashes,
 contents and source metadata were independently checked on 2026-10-19; the
 downloaded Linux executable also passed version and fixture scanning without

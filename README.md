@@ -6,10 +6,10 @@ and unpushed commits are waiting before ending a development session.
 ## Usage
 
 ```sh
-gscan /srv/dev/projects
-gscan --dirty /srv/dev/projects
-gscan --json --recursive --jobs 4 /srv/dev/projects
-gscan --fetch --timeout 60 /srv/dev/projects
+gscan /path/to/projects
+gscan --dirty /path/to/projects
+gscan --json --recursive --jobs 4 /path/to/projects
+gscan --fetch --timeout 60 /path/to/projects
 gscan --help
 ```
 
@@ -32,9 +32,9 @@ Example output (names and counts are illustrative):
 
 ```text
 REPOSITORY     BRANCH          CHANGES  AHEAD  BEHIND
-agent-gateway  feature/tools         3      2       0
-data-prism     main                  0      0       0
-jresolve      main                  1      -       -
+example-api    feature/tools         3      2       0
+example-web   main                  0      0       0
+example-cli   main                  1      -       -
 ```
 
 CHANGES counts changed paths, including untracked files and conflicts. A dash
@@ -66,11 +66,11 @@ contract](docs/design.md) before consuming paths in a script.
 
 Requires stable Rust (edition 2024) and Git on PATH. There are no third-party Rust
 dependencies. Native CI runs on Linux, macOS and Windows; platform-specific
-filesystem tests run where their fixtures are supported. Python is only required
-for the independent JSON validation check.
+filesystem tests run where their fixtures are supported. Python 3.11+ is required
+for JSON validation and packaging checks.
 
 ```sh
-cargo run -- --dirty /srv/dev/projects
+cargo run -- --dirty /path/to/projects
 cargo test --offline
 cargo fmt -- --check
 cargo clippy --offline --all-targets -- -D warnings
@@ -82,10 +82,10 @@ On Windows the executable path ends in `.exe`. Install from source with
 `cargo install --path . --offline`, or use the verified release archives described
 in the [installation guide](docs/installation.md). Archives cover Linux x86_64
 (glibc 2.35+), macOS 14+ Apple Silicon and Windows x86_64; Rust is not needed to
-run them. Git is still required. Release automation creates private drafts for
+run them. Git is still required. Release automation creates drafts for
 review; it does not publish them automatically.
 
-MIT-licensed; see [LICENSE](LICENSE). Repository and release visibility stay private.
+MIT-licensed; see [LICENSE](LICENSE).
 For build scripts, checksum verification and the tag workflow, see
 [packaging maintenance](docs/packaging.md).
 
@@ -103,6 +103,3 @@ cleanup are outside the per-command timeout; this is not a whole-scan deadline.
 - [Workflow](docs/workflow.md)
 - [Implementation plan and backlog](docs/plan/PLAN.md)
 - [Installation](docs/installation.md) and [release maintenance](docs/packaging.md)
-
-Claude Kit is installed locally in `.claude/` and is not versioned. Recreate it
-with `~/.claude-kit/install.sh /path/to/gscan` from the existing shared kit.

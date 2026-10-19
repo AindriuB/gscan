@@ -21,7 +21,7 @@
   failures without losing other repositories. Document process-tree limitations.
 - `--fetch`: explicit sequential refresh of configured remotes before inspections,
   no tags/pruning/submodule recursion/automatic maintenance. A failed fetch is an
-  error but successful inspection may still report cached status. No real homelab
+  error but successful inspection may still report cached status. No external
   fetch is needed to test this feature; use temporary local remotes.
 - Portability: remove unconditional Unix test dependencies, add Linux/macOS/Windows
   CI, and state which platforms have actually been verified.
@@ -42,7 +42,6 @@ Baseline `01030ff`: 23 tests passed before this task; no external Rust dependenc
 
 Linux: 30 Rust tests passed, plus one ignored subprocess fixture invoked by the
 deadline test. Formatting and all-target Clippy passed. Native GitHub CI passed
-on Linux, macOS and Windows, including independent Python JSON validation:
-[run 39233162807](https://github.com/AindriuB/gscan/actions/runs/39233162807).
-A parallel JSON scan of 13 homelab repositories returned no errors. Fetch checks
-used local temporary remotes; no live homelab remote was fetched for verification.
+on Linux, macOS and Windows, including independent Python JSON validation.
+A parallel JSON scan of 13 local repositories returned no errors. Fetch checks
+used local temporary remotes; no external remote was fetched for verification.

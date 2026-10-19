@@ -3,8 +3,8 @@
 ## Artifacts and compatibility
 
 Version `0.1.0` is defined in Cargo.toml; tags must be exactly `v<version>`.
-The project is MIT-licensed. The repository remains private and Cargo publishing
-is disabled. Packaging does not change either setting.
+The project is MIT-licensed and Cargo publishing is disabled. Packaging does
+not change repository visibility.
 
 | Target | Runner | Artifact | Runtime baseline |
 |---|---|---|---|
@@ -64,13 +64,13 @@ Only a pushed tag beginning with `v` enables the final draft job. It has
 Actions are pinned to commits and checkout does not persist credentials.
 
 The draft helper rechecks the tag/version/source commit, archive hashes and
-private repository visibility. It creates a draft with exactly three archives
+repository visibility (public or private). It creates a draft with exactly three archives
 and SHA256SUMS. A retry can update that draft's expected assets, but it refuses
 unexpected user assets or any already published release.
 
 **Publishing is deliberately manual.** Inspect the draft notes and assets, then
 use GitHub's Publish release button when authorized. The workflow never publishes
-or changes visibility. A published release in this repository remains private.
+or changes visibility.
 
 ## Creating the next release
 
@@ -91,11 +91,11 @@ or changes visibility. A published release in this repository remains private.
    and rerun the failed job. Do not overwrite a published release to repair it;
    make a new version instead.
 
-Use GitHub CLI with repository access to inspect a draft:
+From a clone, use GitHub CLI with repository access to inspect a draft:
 
 ```sh
-gh release view v0.1.0 --repo AindriuB/gscan
-gh release download v0.1.0 --repo AindriuB/gscan --dir downloaded-release
+gh release view v0.1.0
+gh release download v0.1.0 --dir downloaded-release
 ```
 
 The [installation guide](installation.md) covers user installation, verification,

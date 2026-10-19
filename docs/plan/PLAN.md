@@ -13,7 +13,7 @@ with no third-party Rust dependencies, automatic fetch or repository mutations.
 
 Verified implementation: `445a232`, measured 2026-10-19. All 20 tests pass;
 rustfmt and Clippy (all targets, warnings denied) pass. A live read-only scan
-successfully inspected 13 immediate child repositories in `/srv/dev/projects`.
+successfully inspected 13 immediate child repositories in a local projects directory.
 
 ## Follow-up — complete
 
@@ -33,7 +33,7 @@ repositories with changed paths and excluded clean repositories.
 
 Implementation `8169379` passes 30 Linux Rust tests, formatting, all-target Clippy
 and independent Python JSON validation. Native CI passes on Linux, macOS and
-Windows ([run](https://github.com/AindriuB/gscan/actions/runs/39233162807)).
+Windows.
 Platform-specific fixtures account for different test counts. One ignored test
 function is an explicitly launched subprocess fixture, not missing coverage.
 
@@ -44,12 +44,12 @@ function is an explicitly launched subprocess fixture, not missing coverage.
 | 06 | [Packaging and releases](tasks/06-packaging.md) | 05 | Complete / merged |
 
 Task 06 delivered MIT-licensed v0.1.0 archives, SHA256SUMS, installation docs
-and tag-triggered private draft releases. Publishing a draft remains a separate
+and tag-triggered draft releases. Publishing a draft remains a separate
 maintainer action.
 
 ## Now
 
-Tasks 01–06 are complete. The private v0.1.0 draft and downloaded checksums
+Tasks 01–06 are complete. The v0.1.0 draft and downloaded checksums
 are verified; see [task 06](tasks/06-packaging.md) for evidence.
 Publishing the draft remains a separate maintainer decision.
 

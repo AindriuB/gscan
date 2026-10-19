@@ -30,7 +30,7 @@ class DraftReleaseTests(unittest.TestCase):
             return ""
         query = subprocess.CompletedProcess([], 1 if existing is None else 0,
                                             stdout="" if existing is None else json.dumps(existing))
-        with patch.object(sys, "argv", ["draft_release.py", "--repo", "AindriuB/gscan", "--tag", f"v{version}"]), \
+        with patch.object(sys, "argv", ["draft_release.py", "--repo", "example/gscan", "--tag", f"v{version}"]), \
              patch.object(package, "manifest") as manifest, \
              patch.object(package, "run", side_effect=run) as calls, \
              patch.object(draft_release.subprocess, "run", return_value=query), \
@@ -55,8 +55,14 @@ class DraftReleaseTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertFalse(any(args[:2] == ["gh", "release"] for args in calls))
 
-    def test_refuses_public_repository(self):
+    def test_creates_draft_in_public_repository(self):
         code, calls, _ = self.exercise(None, visibility="PUBLIC")
+        self.assertEqual(code, 0)
+        create, = [args for args in calls if args[:3] == ["gh", "release", "create"]]
+        self.assertIn("--draft", create)
+
+    def test_refuses_unknown_visibility(self):
+        code, calls, _ = self.exercise(None, visibility="UNKNOWN")
         self.assertEqual(code, 1)
         self.assertFalse(any(args[:2] == ["gh", "release"] for args in calls))
 

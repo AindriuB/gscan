@@ -34,15 +34,11 @@ inspection boundary. Formatting functions return strings; callers own I/O.
 
 ## Repository topology
 
-`/srv/dev/projects/gscan` is a single Git repository on `main`, tracking
-`origin/main` in the private GitHub repository `AindriuB/gscan`. Clone with
-`git clone git@github.com:AindriuB/gscan.git`. Sibling directories are scan inputs, not dependencies or
-repositories that must be cloned to build gscan.
+gscan is a standalone Git repository. Scan inputs are independent repositories;
+no sibling checkout or shared workspace is required to build it.
 
-Cargo source, lockfile, README, agent guides and docs are versioned.
-`target/`, `.claude/` and `.worktrees/` are local generated directories.
-The shared Claude Kit lives at `~/.claude-kit`; reinstall project support with
-`~/.claude-kit/install.sh /path/to/gscan`. Shared roles live under `~/.claude/`.
+Cargo source, lockfile, README, contributor guides and docs are versioned.
+Build output and temporary worktrees are ignored.
 
 ## Decisions — 2026-10-19
 
@@ -69,7 +65,7 @@ The precise behavioural contract and known limits are in [design.md](design.md).
 ## Packaging boundary
 
 `scripts/package.py` builds and verifies versioned archives from a native release
-binary. `scripts/draft_release.py` accepts only matching-tag private drafts and
+binary. `scripts/draft_release.py` accepts only matching-tag drafts and
 refuses published releases. `.github/workflows/release.yml` builds the three
 native packages, assembles checksums, and limits repository-write permission to
 the tag-triggered draft job. User installation is documented separately from

@@ -94,7 +94,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
   draft:
-    name: Create private draft release
+    name: Create draft release
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     needs: assemble
     runs-on: ubuntu-22.04

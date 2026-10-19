@@ -2,6 +2,18 @@
 
 Completed work only, newest first. Consult HISTORY-INDEX.md before reading entries.
 
+## 2026-10-19 — Portable documentation and release preparation
+
+Replaced machine-specific paths and repository examples with generic examples,
+removed shared-workspace setup instructions and account-specific links, and
+made release documentation usable from any clone. Draft creation supports public
+and private repositories while retaining tag checks and the manual publishing gate.
+Repository visibility and existing release tags/assets were not changed.
+
+**Validation:** all 14 Python release and packaging tests pass, including public
+repository draft creation and refusal to modify published releases. Tracked-file
+reference and Markdown link checks pass. Git history is retained unchanged.
+
 ## 2026-10-19 — Verified packages and private draft release
 
 Task 06 delivers MIT-licensed v0.1.0 archives for Linux x86_64 GNU, macOS Apple
@@ -9,7 +21,7 @@ Silicon and Windows x86_64 MSVC, with installation guidance, source metadata
 and SHA256SUMS. A tag-triggered workflow creates private drafts only; crates.io
 publishing remains disabled. Source `3145975` is tagged `v0.1.0`.
 
-**Validation:** the [tag workflow](https://github.com/AindriuB/gscan/actions/runs/39235973876)
+**Validation:** the tag workflow
 passes native Rust checks, 13 Python packaging tests, extracted-binary smoke
 checks without Rust on PATH, and aggregate checksum verification. Linux passes
 30 Rust tests. The private draft contains exactly the three archives and
@@ -31,7 +43,7 @@ and default scans remain read-only. Task 06 records packaging as backlog only.
 **Validation:** implementation `8169379` passes 30 Linux tests, formatting and
 all-target Clippy. An independent Python parser verifies JSON schema, escaping,
 nullable counts and partial failures. Native Linux, macOS and Windows CI passes
-([run 39233162807](https://github.com/AindriuB/gscan/actions/runs/39233162807)).
+on the recorded implementation.
 A live parallel JSON scan reported 13 repositories and no errors. Fetch tests
 used temporary local remotes and verified worktree/index/local branch preservation.
 
@@ -50,7 +62,7 @@ errors and exit codes, and distinguishes empty roots from clean-only scans.
 
 **Validation:** implementation `69b7104` passes 23 tests, formatting and all-target
 Clippy with warnings denied. Three new integration tests failed before the feature
-was implemented and now pass. The live homelab scan returned two dirty repositories.
+was implemented and now pass. The live local scan returned two dirty repositories.
 
 **Cost:** filtering must happen after inspection, so a hidden clean row cannot hide
 a failure elsewhere. This option reduces output, not scan work or runtime.
@@ -67,7 +79,7 @@ refresh writes.
 warnings denied, and diff checks pass. Tests include conflicts, submodules,
 linked worktrees, malformed status records, non-UTF-8 paths, inherited Git
 repository overrides and output errors. A fixture's refs, index and config were
-unchanged by scanning. A live scan of `/srv/dev/projects` returned 13 repositories.
+unchanged by scanning. A live scan of a local projects directory returned 13 repositories.
 
 **Cost:** Git's rename records consume an extra NUL-delimited path; treating each
 record as one file would overcount. Keep byte parsing separate from ASCII output.
@@ -76,8 +88,8 @@ repositories remain a documented limitation.
 
 ## 2026-10-19 — Scaffold and first-version design
 
-Created the Rust crate in commit `b7354bd`. Installed local Claude Kit support and
-added agent guidance. Documented the first-version CLI contract, architecture,
+Created the Rust crate in commit `b7354bd`. Added contributor guidance.
+Documented the first-version CLI contract, architecture,
 conventions and three sequential implementation tasks. The executable remains
 the starter greeting; repository scanning has not been implemented.
 
@@ -85,5 +97,4 @@ the starter greeting; repository scanning has not been implemented.
 and Clippy with warnings denied. Documentation links and guide lengths are
 checked separately when this documentation is written.
 
-**Cost:** the kit templates described a multi-repository workspace. Adapted them
-to this single crate to avoid incorrect build and repository-topology guidance.
+**Cost:** kept build and repository-topology guidance scoped to this single crate.

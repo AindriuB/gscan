@@ -17,7 +17,7 @@ Read INSTALL.md for supported platforms, checksum verification, installation,
 upgrades and removal. BUILD.json records this archive's version, target, source
 commit and compiler. The MIT license is in LICENSE.
 
-Source and documentation: https://github.com/AindriuB/gscan
+Find source and documentation in the repository that provided this release.
 
 JSON text fields use reversible ASCII byte escapes; consult docs/design.md in
 the source repository before decoding paths in a script. Timeouts apply per Git

@@ -21,18 +21,10 @@ root with Cargo. Extended scanning is implemented; README.md describes usage and
 
 Read only the documents needed for the task; verify implementation claims against code.
 
-## Roles
-
-Use the kit's roles when following its task workflow: explorer and architect
-inspect; planner scopes work; implementer writes code; scribe maintains docs;
-code-reviewer and reviewer assess changes; tester verifies behaviour.
-Shared role definitions live in `~/.claude/agents/`.
-
-## The loop
+## Workflow
 
 Plan → implement → review → verify → record. See `docs/workflow.md`.
-Claude Kit slash commands are harness-specific; use available tools to perform
-the same steps when those commands are unavailable.
+Keep task ownership explicit and record observed verification results.
 
 ## Verification
 

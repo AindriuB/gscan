@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create/update a private draft only, after validating all target archives."""
+"""Create/update a draft only, after validating all target archives."""
 import argparse
 import json
 from pathlib import Path
@@ -29,8 +29,8 @@ def main():
         if not notes.is_file():
             raise ValueError("release notes are missing")
         visibility = package.run(["gh", "repo", "view", args.repo, "--json", "visibility", "--jq", ".visibility"])
-        if visibility != "PRIVATE":
-            raise ValueError("this release workflow is restricted to the private repository")
+        if visibility not in {"PRIVATE", "PUBLIC"}:
+            raise ValueError("unsupported repository visibility")
         assets = [args.output / package.filename(release_version, target) for target in package.TARGETS]
         assets.append(args.output / "SHA256SUMS")
         allowed = {path.name for path in assets}
@@ -54,7 +54,7 @@ def main():
                                          "--json", "isDraft,assets,url"]))
         if not release["isDraft"] or {asset["name"] for asset in release["assets"]} != allowed:
             raise ValueError("release must remain a draft with exactly the expected assets")
-        print(f"Private draft ready: {release['url']}")
+        print(f"Draft ready: {release['url']}")
     except (ValueError, OSError, subprocess.CalledProcessError) as error:
         parser.exit(1, f"Draft release failed: {error}\n")
 

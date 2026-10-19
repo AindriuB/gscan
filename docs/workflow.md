@@ -32,11 +32,3 @@ Update PLAN.md only when status changes. Record completed behaviour and its
 validation in HISTORY.md with a matching HISTORY-INDEX.md row. Keep intended
 features out of completion history. The scribe commits documentation changes
 before reporting completion; never include unrelated user edits.
-
-## Kit integration
-
-Claude Kit supports `/plan`, `/fanout`, `/review`, `/verify`, `/record`, `/recon`
-and `/design` in its harness. Shared roles are in `~/.claude/agents/`; project
-scripts/settings are in the ignored `.claude/` directory. Other agents follow
-the same phases using their own tools. Small fixes and documentation work can
-be done directly without inventing an implementation task or parallel work.

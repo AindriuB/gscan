@@ -15,18 +15,15 @@ binaries. Linux ARM64 and Intel Mac archives are not provided in v0.1.0.
 Windows builds link the MSVC C runtime statically. Unix timeout cleanup requires
 `/bin/kill`; Windows uses `taskkill`. These are standard OS utilities, not Rust tools.
 
-The repository and releases are private. Download your archive and `SHA256SUMS`
-from the authenticated GitHub Releases page:
-https://github.com/AindriuB/gscan/releases
+Download your archive and `SHA256SUMS` from the source repository's GitHub
+Releases page. Draft releases require maintainer access; published releases
+follow the repository's visibility. Nothing is published to crates.io by this
+workflow.
 
-Draft releases are visible to repository maintainers with the relevant access.
-Once published within the private repository, release downloads still require
-repository access. Nothing is published to crates.io by this workflow.
-
-With authenticated GitHub CLI, for example:
+From a clone of the source repository, use GitHub CLI:
 
 ```sh
-gh release download v0.1.0 --repo AindriuB/gscan \
+gh release download v0.1.0 \
   --pattern 'gscan-0.1.0-x86_64-unknown-linux-gnu.tar.gz' \
   --pattern SHA256SUMS
 ```
