@@ -24,7 +24,7 @@ edits need link/content checks, not new Rust tests.
 
 Tests create unique temporary directories and clean them up through a fixture
 guard. Set local Git identity in fixtures, use explicit initial branches and
-isolate global/system Git configuration. No sleeps, network, user repository
+isolate global/system Git configuration. No timing sleeps in behaviour tests, network, user repository
 mutations or reliance on the user's Git identity. Do not change process-wide
 environment variables in parallel tests; set each child command's environment.
 
@@ -49,3 +49,11 @@ Keep AGENTS.md and CLAUDE.md below 51 lines and consistent on project facts.
 Keep history entries and their index together. Record observed validation only,
 including the commit used for any test baseline. Never claim zero tests proves
 behaviour. Avoid secrets, private file contents and raw log dumps in docs.
+
+## Platform checks
+
+CI runs formatting, all-target Clippy, Rust tests and Python JSON checks natively
+on Linux, macOS and Windows. Gate OS-specific fixtures narrowly: invalid-byte
+filenames and `/dev/full` are Linux-specific, not generic Unix assumptions.
+Deadline tests may use a deliberately blocked subprocess and a generous outer
+bound; never use a short sleep to infer normal feature correctness.

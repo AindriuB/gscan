@@ -25,16 +25,33 @@ Verified implementation: `69b7104`, measured 2026-10-19. All 23 tests,
 formatting and all-target Clippy pass. The live filtered scan returned two
 repositories with changed paths and excluded clean repositories.
 
+## Extended features — complete
+
+| ID | Task | Depends on | Status |
+|---|---|---|---|
+| 05 | [JSON, deadlines, recursion, workers, fetch and portability](tasks/05-extended-scanning.md) | 04 | Complete / merged |
+
+Implementation `8169379` passes 30 Linux Rust tests, formatting, all-target Clippy
+and independent Python JSON validation. Native CI passes on Linux, macOS and
+Windows ([run](https://github.com/AindriuB/gscan/actions/runs/39233162807)).
+Platform-specific fixtures account for different test counts. One ignored test
+function is an explicitly launched subprocess fixture, not missing coverage.
+
+## Backlog
+
+| ID | Task | Depends on | Status |
+|---|---|---|---|
+| 06 | [Packaging and releases](tasks/06-packaging.md) | 05 | Backlog / not started |
+
+Task 06 covers versioned archives, checksums, supported targets, installation,
+release automation and license/version decisions. No release publication is
+implied by this backlog entry.
+
 ## Now
 
-Use `--dirty` for a quick unfinished-work check. No implementation task is in progress.
-
-## Next
-
-Consider JSON output if scripts need to consume scan results. It is not yet
-committed for implementation.
+Use the extended scanner; no implementation task is in progress.
 
 ## Someday
 
-Recursive scanning, explicit fetch, concurrency, process deadlines and portability.
+Whole-scan deadlines, signal cancellation, fetch deduplication and colour.
 Each needs a separate scope decision and tests.

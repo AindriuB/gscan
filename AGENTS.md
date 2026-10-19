@@ -4,7 +4,7 @@
      If you are adding detail here, it belongs in docs/ instead. -->
 
 Single-repository Rust CLI for surveying local Git repositories. Build from this
-root with Cargo. V1 scanning is implemented; README.md describes usage and limits.
+root with Cargo. Extended scanning is implemented; README.md describes usage and limits.
 
 ## Read on demand, not up front
 
@@ -46,5 +46,5 @@ unborn and detached HEAD states and missing upstreams.
 2. Preserve unrelated changes and keep edits within the requested task's scope.
 3. Prefer `rg` and targeted reads; cite paths and lines in findings.
 4. Use Git commands and the Rust standard library for the first milestone.
-5. Scanning is read-only; never fetch or modify inspected repositories implicitly.
+5. Scanning is read-only by default; only explicit `--fetch` permits remote refresh.
 6. Keep credentials, tokens and private repository contents out of docs and logs.

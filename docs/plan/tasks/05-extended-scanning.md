@@ -1,6 +1,6 @@
 # 05 — Extended scanning and portability
 
-**Status:** In progress
+**Status:** Complete / merged (implementation `8169379`)
 
 **Depends on:** 04
 
@@ -37,3 +37,12 @@ all tests. Validate JSON with an independent parser. Run the platform CI matrix
 when available, and never claim unobserved platform results.
 
 Baseline `01030ff`: 23 tests passed before this task; no external Rust dependencies.
+
+## Verification result — 2026-10-19
+
+Linux: 30 Rust tests passed, plus one ignored subprocess fixture invoked by the
+deadline test. Formatting and all-target Clippy passed. Native GitHub CI passed
+on Linux, macOS and Windows, including independent Python JSON validation:
+[run 39233162807](https://github.com/AindriuB/gscan/actions/runs/39233162807).
+A parallel JSON scan of 13 homelab repositories returned no errors. Fetch checks
+used local temporary remotes; no live homelab remote was fetched for verification.

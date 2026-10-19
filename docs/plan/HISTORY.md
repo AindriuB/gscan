@@ -2,6 +2,26 @@
 
 Completed work only, newest first. Consult HISTORY-INDEX.md before reading entries.
 
+## 2026-10-19 — Extended scanning and native platform verification
+
+Task 05 adds JSON output, recursive discovery, bounded inspection workers,
+per-command deadlines and explicit sequential fetching. Results remain sorted
+and default scans remain read-only. Task 06 records packaging as backlog only.
+
+**Validation:** implementation `8169379` passes 30 Linux tests, formatting and
+all-target Clippy. An independent Python parser verifies JSON schema, escaping,
+nullable counts and partial failures. Native Linux, macOS and Windows CI passes
+([run 39233162807](https://github.com/AindriuB/gscan/actions/runs/39233162807)).
+A live parallel JSON scan reported 13 repositories and no errors. Fetch tests
+used temporary local remotes and verified worktree/index/local branch preservation.
+
+**Cost:** macOS rejects invalid-byte filename fixtures and does not provide
+`/dev/full`; those tests are Linux-only, with Unicode paths checked on all platforms.
+Windows capture handles must be released even when process spawning fails.
+Deadlines use capture files to avoid pipe EOF hangs; descendant cleanup requires
+OS helpers and is best effort for detached processes. Fetch writes are serial
+because linked worktrees may share refs.
+
 ## 2026-10-19 — Dirty repository filter
 
 Task 04 adds `--dirty` to show only repositories with changed paths. Clean

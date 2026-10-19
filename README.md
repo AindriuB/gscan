@@ -3,19 +3,32 @@
 Survey local Git repositories from the command line. See where unfinished work
 and unpushed commits are waiting before ending a development session.
 
-**Status:** v1 implemented and verified on Linux.
-
 ## Usage
 
 ```sh
 gscan /srv/dev/projects
 gscan --dirty /srv/dev/projects
-gscan                     # scan immediate children of the current directory
+gscan --json --recursive --jobs 4 /srv/dev/projects
+gscan --fetch --timeout 60 /srv/dev/projects
 gscan --help
-gscan --version
 ```
 
-Example output (repository names and counts are illustrative):
+Without a directory, scan children of the current directory. Defaults are
+read-only, one directory level, one worker, and a 30-second timeout per Git command.
+
+| Option | Behaviour |
+|---|---|
+| `--dirty` | Show only repositories with changed paths; retain all errors |
+| `--json` | Emit schema-versioned JSON instead of a table |
+| `--recursive` | Descend ordinary directories, stopping at repositories |
+| `--jobs N` | Inspect with 1–64 workers; default 1, output always sorted |
+| `--timeout N` | Allow 1–3600 seconds per Git command; default 30 |
+| `--fetch` | Explicitly refresh configured remotes before inspecting |
+
+Numeric options also accept `--jobs=4` and `--timeout=60`. Options may precede or
+follow the directory. Use `--` before a directory whose name begins with `-`.
+
+Example output (names and counts are illustrative):
 
 ```text
 REPOSITORY     BRANCH          CHANGES  AHEAD  BEHIND
@@ -24,40 +37,56 @@ data-prism     main                  0      0       0
 jresolve      main                  1      -       -
 ```
 
-CHANGES counts changed paths, including untracked files. A dash means no upstream
-comparison is available. Counts use locally cached Git refs, never an automatic
-fetch. A dirty repository is a normal result, not an error.
+CHANGES counts changed paths, including untracked files and conflicts. A dash
+means no upstream comparison is available. Dirty repositories are normal results,
+not errors. `--dirty` excludes clean repositories with unpushed commits.
 
-Use `--dirty` to show only repositories with staged, unstaged, conflicted or
-untracked paths. Clean repositories with unpushed commits are excluded. Errors
-are still reported even when successful rows are filtered out.
+Recursive scans show paths relative to the scan root, skip symlinked children and
+bare stores, and stop at repository boundaries. They do not descend into submodules
+or nested repositories inside an already discovered repository.
 
-V1 inspects immediate child directories, including linked worktrees. It skips
-symlinks, ordinary directories and bare repositories. It does not recurse or
-modify repositories. See [the CLI contract](docs/design.md) for edge cases.
+`--fetch` contacts configured remotes and writes Git objects/tracking refs according
+to their configured refspecs. Fetches are sequential, with no pruning, tags,
+submodule recursion or automatic maintenance. A failed fetch is reported even if
+cached status can still be inspected. Default scans never fetch.
 
-## Development
+## JSON and scripts
 
-Requires stable Rust (edition 2024) and Git on PATH. Linux is the initial target.
-The implementation uses the Rust standard library and installed Git, with
-no third-party Rust dependencies in v1.
+`--json` emits one object with `schema_version`, `text_encoding`, `repositories`
+and `errors`, including empty or partially failed scans. Branch state is explicit;
+missing comparisons use `null`. Exit 0 means a successful scan, 1 a scan/fetch/output
+failure, and 2 invalid usage. JSON scan errors are in the object rather than duplicated
+on stderr; usage and output errors still use stderr.
+
+Text fields use reversible ASCII byte escapes (`\\` for a backslash, `\xNN` for
+control/non-ASCII bytes), then normal JSON quoting. See [the schema and full CLI
+contract](docs/design.md) before consuming paths in a script.
+
+## Development and verification
+
+Requires stable Rust (edition 2024) and Git on PATH. There are no third-party Rust
+dependencies. Native CI runs on Linux, macOS and Windows; platform-specific
+filesystem tests run where their fixtures are supported. Python is only required
+for the independent JSON validation check.
 
 ```sh
-cargo run -- /srv/dev/projects
+cargo run -- --dirty /srv/dev/projects
 cargo test --offline
 cargo fmt -- --check
-cargo clippy --offline -- -D warnings
+cargo clippy --offline --all-targets -- -D warnings
+cargo build --offline
+python tests/validate_json.py target/debug/gscan
 ```
 
-Use `cargo install --path . --offline` to install `gscan` locally.
+On Windows the executable path ends in `.exe`. Install from source with
+`cargo install --path . --offline`. Versioned binary packaging is a separate
+[backlog task](docs/plan/tasks/06-packaging.md); no release archives are published yet.
 
-Verification covers 23 unit and integration tests, including local upstreams,
-linked worktrees, merge conflicts, submodules, unusual filenames and partial
-failures. The first homelab smoke scan inspected 13 repositories successfully.
-
-Counts are based on cached refs and may be stale until you fetch separately.
-V1 runs Git sequentially without process timeouts and buffers each status response;
-very large repositories can take time and memory. Linux is the tested platform.
+Timeout cleanup uses `/bin/kill` for Unix process groups and `taskkill` for Windows
+process trees, then kills/reaps the direct child. These helpers must be available
+for descendant cleanup. Detached helpers may escape cleanup. Capture files are
+temporary; output above 32 MiB per stream is rejected. Filesystem discovery and OS
+cleanup are outside the per-command timeout; this is not a whole-scan deadline.
 
 ## Project documents
 
@@ -65,7 +94,7 @@ very large repositories can take time and memory. Linux is the tested platform.
 - [Architecture](docs/architecture.md)
 - [Conventions](docs/conventions.md)
 - [Workflow](docs/workflow.md)
-- [Implementation plan](docs/plan/PLAN.md)
+- [Implementation plan and backlog](docs/plan/PLAN.md)
 
-Claude Kit is installed locally in `.claude/` and is not versioned. To recreate
-it from the existing shared kit, run `~/.claude-kit/install.sh /path/to/gscan`.
+Claude Kit is installed locally in `.claude/` and is not versioned. Recreate it
+with `~/.claude-kit/install.sh /path/to/gscan` from the existing shared kit.

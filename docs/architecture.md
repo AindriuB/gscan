@@ -3,7 +3,7 @@
 ## Current state
 
 One Rust binary crate, edition 2024, with no third-party dependencies.
-The CLI, scanner, Git inspection and formatting modules implement the v1 contract.
+The CLI, scanner, Git inspection and formatting modules implement the extended CLI contract.
 
 ## Components
 
@@ -13,12 +13,17 @@ The CLI, scanner, Git inspection and formatting modules implement the v1 contrac
 | `src/lib.rs` | Public module exports for integration tests |
 | `src/git.rs` | Git invocation, porcelain parsing, repository status types |
 | `src/scan.rs` | Immediate-child discovery, sorting and partial-error collection |
-| `src/output.rs` | Byte escaping and plain table rendering |
+| `src/output.rs` | Byte escaping, table rendering and JSON serialization |
+| `src/process.rs` | Per-command deadlines, capture limits and child cleanup |
 | `tests/cli.rs` | Executable-level tests using temporary Git repositories |
+| `tests/validate_json.py` | Independent JSON schema/escaping checks |
+| `.github/workflows/ci.yml` | Native Linux, macOS and Windows checks |
 
-Data flow: arguments → scan root → sorted candidate paths → Git status results
-→ rendered table and diagnostics → exit status. No shared mutable state or async
-runtime is needed. Pass paths explicitly; do not change the process working dir.
+Data flow: arguments → discovery → optional serial fetch → bounded Git inspection
+workers → sorted statuses/errors → table or JSON → exit status. Workers share an
+atomic candidate index and return owned batches; no async runtime is needed.
+Each Git subprocess uses the capture/deadline helper. Pass paths explicitly; do
+not change the process working directory.
 
 `RepoStatus` contains a `PathBuf`, a branch state (named, unborn or detached),
 changed-path count, optional upstream name, and optional ahead/behind pair.
@@ -47,6 +52,16 @@ The shared Claude Kit lives at `~/.claude-kit`; reinstall project support with
 - Scan one directory level: predictable scope and no accidental disk-wide traversal.
 - Keep v1 read-only and offline: cached upstream comparisons are sufficient for an overview.
 - Use only the standard library initially: a small interface does not need a framework.
-- Target Linux first; portability is a later tested claim, not an assumption.
+- Add native Linux/macOS/Windows CI; claim verification only from observed runs.
 
 The precise behavioural contract and known limits are in [design.md](design.md).
+
+## Extended-scan decisions — 2026-10-19
+
+- Keep one inspection worker by default, with explicit bounded parallelism.
+- Stop recursive discovery at repository boundaries to avoid scanning build trees.
+- Serialize fetches because worktrees can share refs; parallelize read-only inspection.
+- Use temporary files rather than output pipes so deadline cleanup does not depend
+  on reader threads reaching EOF after an inherited handle escapes.
+- Keep JSON serialization dependency-free; independently parse outputs with Python.
+- Treat packaging as a separate backlog task, not an implicit public release.
