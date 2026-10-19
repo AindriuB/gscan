@@ -60,6 +60,13 @@ jobs:
         run: |
           cargo build --release --locked --offline --target "$TARGET"
           python scripts/package.py build --target "$TARGET" --tag "$RELEASE_TAG"
+      - name: Build and exercise Debian package
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev
+          python scripts/debian.py --tag "$RELEASE_TAG"
+          docker run --rm -v "$PWD/dist:/packages:ro" -v "$PWD/tests/debian_lifecycle.sh:/test.sh:ro" ubuntu:22.04 sh /test.sh
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: package-${{ matrix.target }}

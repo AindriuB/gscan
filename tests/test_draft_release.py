@@ -11,13 +11,14 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import draft_release
 import package
+import debian
 
 
 class DraftReleaseTests(unittest.TestCase):
     def exercise(self, existing, visibility="PRIVATE", tag_commit=None):
         commit = "a" * 40
         version = package.version()
-        assets = [package.filename(version, target) for target in package.TARGETS] + ["SHA256SUMS"]
+        assets = [package.filename(version, target) for target in package.TARGETS] + [debian.filename(version), "SHA256SUMS"]
         def run(args, **kwargs):
             if args[:3] == ["git", "rev-parse", "HEAD"]:
                 return commit
