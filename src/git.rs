@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::time::Duration;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Branch {
@@ -17,36 +18,73 @@ pub struct RepoStatus {
     pub comparison: Option<(usize, usize)>,
 }
 
-pub fn inspect(path: &Path) -> Result<RepoStatus, Vec<u8>> {
+fn command(path: &Path) -> Command {
     let mut command = Command::new("git");
     for (name, _) in std::env::vars_os() {
         if name.as_encoded_bytes().starts_with(b"GIT_") {
             command.env_remove(name);
         }
     }
-    let output = command
+    command
         .env("GIT_TERMINAL_PROMPT", "0")
+        .env("GCM_INTERACTIVE", "Never")
+        .env("GIT_ASKPASS", "")
+        .env("SSH_ASKPASS", "")
         .env("LC_ALL", "C")
         .args(["--no-optional-locks", "-C"])
-        .arg(path)
-        .args([
-            "status",
-            "--porcelain=v2",
-            "--branch",
-            "-z",
-            "--untracked-files=all",
-        ])
-        .output()
+        .arg(path);
+    command
+}
+
+fn execute(path: &Path, args: &[&str], timeout: Duration) -> Result<Vec<u8>, Vec<u8>> {
+    let output = crate::process::run(command(path).args(args), timeout)
         .map_err(|e| format!("cannot run git: {e}").into_bytes())?;
     if !output.status.success() {
-        let mut message = format!("git status failed ({})", output.status).into_bytes();
+        let mut message = format!("git {} failed ({})", args[0], output.status).into_bytes();
         if !output.stderr.is_empty() {
             message.extend_from_slice(b": ");
             message.extend_from_slice(output.stderr.trim_ascii_end());
         }
         return Err(message);
     }
-    parse(path, &output.stdout).map_err(|e| format!("invalid git status output: {e}").into_bytes())
+    Ok(output.stdout)
+}
+
+pub fn inspect(path: &Path) -> Result<RepoStatus, Vec<u8>> {
+    inspect_with_timeout(path, Duration::from_secs(30))
+}
+
+pub fn inspect_with_timeout(path: &Path, timeout: Duration) -> Result<RepoStatus, Vec<u8>> {
+    let output = execute(
+        path,
+        &[
+            "status",
+            "--porcelain=v2",
+            "--branch",
+            "-z",
+            "--untracked-files=all",
+        ],
+        timeout,
+    )?;
+    parse(path, &output).map_err(|e| format!("invalid git status output: {e}").into_bytes())
+}
+
+pub fn fetch(path: &Path, timeout: Duration) -> Result<(), Vec<u8>> {
+    execute(
+        path,
+        &[
+            "fetch",
+            "--all",
+            "--no-tags",
+            "--no-prune",
+            "--no-prune-tags",
+            "--no-recurse-submodules",
+            "--no-auto-maintenance",
+            "--no-write-fetch-head",
+        ],
+        timeout,
+    )
+    .map(|_| ())
 }
 
 fn number(bytes: &[u8]) -> Result<usize, &'static str> {
@@ -185,7 +223,10 @@ mod tests {
             }
             let out = cmd
                 .current_dir(&self.0)
-                .env("GIT_CONFIG_GLOBAL", "/dev/null")
+                .env(
+                    "GIT_CONFIG_GLOBAL",
+                    if cfg!(windows) { "NUL" } else { "/dev/null" },
+                )
                 .env("GIT_CONFIG_NOSYSTEM", "1")
                 .env("GIT_AUTHOR_NAME", "Test")
                 .env("GIT_AUTHOR_EMAIL", "test@example.invalid")
@@ -195,7 +236,11 @@ mod tests {
                     "-c",
                     "commit.gpgsign=false",
                     "-c",
-                    "core.hooksPath=/dev/null",
+                    if cfg!(windows) {
+                        "core.hooksPath=NUL"
+                    } else {
+                        "core.hooksPath=/dev/null"
+                    },
                 ])
                 .args(args)
                 .output()

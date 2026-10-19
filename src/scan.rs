@@ -1,6 +1,8 @@
 use crate::git::{self, RepoStatus};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::Duration;
 
 #[derive(Debug)]
 pub struct Failure {
@@ -14,6 +16,24 @@ pub struct ScanReport {
     pub failures: Vec<Failure>,
 }
 
+#[derive(Debug, Clone)]
+pub struct Options {
+    pub recursive: bool,
+    pub jobs: usize,
+    pub timeout: Duration,
+    pub fetch: bool,
+}
+impl Default for Options {
+    fn default() -> Self {
+        Self {
+            recursive: false,
+            jobs: 1,
+            timeout: Duration::from_secs(30),
+            fetch: false,
+        }
+    }
+}
+
 fn failure(path: &Path, error: impl std::fmt::Display) -> Failure {
     Failure {
         path: path.to_owned(),
@@ -21,49 +41,131 @@ fn failure(path: &Path, error: impl std::fmt::Display) -> Failure {
     }
 }
 
-pub fn scan(root: &Path) -> Result<ScanReport, Failure> {
-    let entries =
-        fs::read_dir(root).map_err(|e| failure(root, format!("cannot read directory: {e}")))?;
-    let mut report = ScanReport::default();
+fn bare_store(path: &Path) -> bool {
+    path.join("HEAD").is_file() && path.join("objects").is_dir() && path.join("refs").is_dir()
+}
+
+fn discover(
+    root: &Path,
+    recursive: bool,
+    report: &mut ScanReport,
+) -> Result<Vec<PathBuf>, Failure> {
+    let mut pending = vec![root.to_owned()];
     let mut candidates = Vec::new();
-    for entry in entries {
-        let entry = match entry {
-            Ok(entry) => entry,
+    while let Some(directory) = pending.pop() {
+        let entries = match fs::read_dir(&directory) {
+            Ok(entries) => entries,
+            Err(e) if directory == root => {
+                return Err(failure(root, format!("cannot read directory: {e}")));
+            }
             Err(e) => {
-                report.failures.push(failure(root, e));
+                report.failures.push(failure(&directory, e));
                 continue;
             }
         };
-        let path = entry.path();
-        match entry.file_type() {
-            Ok(kind) if kind.is_dir() => {}
-            Ok(_) => continue,
-            Err(e) => {
-                report.failures.push(failure(&path, e));
+        for entry in entries {
+            let entry = match entry {
+                Ok(entry) => entry,
+                Err(e) => {
+                    report.failures.push(failure(&directory, e));
+                    continue;
+                }
+            };
+            let path = entry.path();
+            if entry.file_name() == ".git" {
                 continue;
             }
-        }
-        match fs::symlink_metadata(path.join(".git")) {
-            // Let Git diagnose malformed or dangling metadata too.
-            Ok(_) => candidates.push(path),
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
-            Err(e) => report.failures.push(failure(&path, e)),
+            match entry.file_type() {
+                Ok(kind) if kind.is_dir() => {}
+                Ok(_) => continue,
+                Err(e) => {
+                    report.failures.push(failure(&path, e));
+                    continue;
+                }
+            }
+            match fs::symlink_metadata(path.join(".git")) {
+                Ok(_) => candidates.push(path),
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                    if recursive && !bare_store(&path) {
+                        pending.push(path);
+                    }
+                }
+                Err(e) => report.failures.push(failure(&path, e)),
+            }
         }
     }
-    candidates.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
-    for path in candidates {
-        match git::inspect(&path) {
+    candidates.sort();
+    Ok(candidates)
+}
+
+pub fn scan(root: &Path) -> Result<ScanReport, Failure> {
+    scan_with(root, &Options::default())
+}
+
+pub fn scan_with(root: &Path, options: &Options) -> Result<ScanReport, Failure> {
+    if !(1..=64).contains(&options.jobs) || options.timeout.is_zero() {
+        return Err(failure(root, "invalid worker count or timeout"));
+    }
+    let mut report = ScanReport::default();
+    let candidates = discover(root, options.recursive, &mut report)?;
+    // Linked worktrees may share refs. Never run concurrent fetch writers.
+    if options.fetch {
+        for path in &candidates {
+            if let Err(message) = git::fetch(path, options.timeout) {
+                report.failures.push(Failure {
+                    path: path.clone(),
+                    message,
+                });
+            }
+        }
+    }
+    let next = AtomicUsize::new(0);
+    let worker = || {
+        let mut results = Vec::new();
+        while let Some(path) = candidates.get(next.fetch_add(1, Ordering::Relaxed)) {
+            results.push((
+                path.clone(),
+                git::inspect_with_timeout(path, options.timeout),
+            ));
+        }
+        results
+    };
+    let batches = std::thread::scope(|scope| {
+        let mut handles = Vec::new();
+        for _ in 1..options.jobs.min(candidates.len()) {
+            match std::thread::Builder::new().spawn_scoped(scope, worker) {
+                Ok(handle) => handles.push(handle),
+                Err(_) => break, // Available workers (including this thread) finish the queue.
+            }
+        }
+        let mut batches = vec![worker()];
+        for handle in handles {
+            match handle.join() {
+                Ok(batch) => batches.push(batch),
+                Err(_) => report
+                    .failures
+                    .push(failure(root, "inspection worker panicked")),
+            }
+        }
+        batches
+    });
+    for (path, result) in batches.into_iter().flatten() {
+        match result {
             Ok(status) => report.repositories.push(status),
             Err(message) => report.failures.push(Failure { path, message }),
         }
     }
-    report.failures.sort_by(|a, b| a.path.cmp(&b.path));
+    report.repositories.sort_by(|a, b| a.path.cmp(&b.path));
+    report
+        .failures
+        .sort_by(|a, b| (&a.path, &a.message).cmp(&(&b.path, &b.message)));
     Ok(report)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(unix)]
     use std::process::Command;
     use std::sync::atomic::{AtomicUsize, Ordering};
     struct Temp(PathBuf);
@@ -84,6 +186,7 @@ mod tests {
             let _ = fs::remove_dir_all(&self.0);
         }
     }
+    #[cfg(unix)]
     #[test]
     fn discovery_orders_rows_and_preserves_partial_results() {
         let temp = Temp::new();

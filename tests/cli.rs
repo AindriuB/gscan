@@ -1,9 +1,15 @@
+#[cfg(unix)]
 use std::ffi::OsString;
 use std::fs;
+#[cfg(unix)]
 use std::os::unix::{ffi::OsStringExt, fs::symlink};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::sync::atomic::{AtomicUsize, Ordering};
+
+fn null_device() -> &'static str {
+    if cfg!(windows) { "NUL" } else { "/dev/null" }
+}
 
 struct Fixture {
     base: PathBuf,
@@ -35,7 +41,7 @@ impl Fixture {
         cmd.current_dir(&self.root)
             .env("HOME", &self.home)
             .env("XDG_CONFIG_HOME", &self.home)
-            .env("GIT_CONFIG_GLOBAL", "/dev/null")
+            .env("GIT_CONFIG_GLOBAL", null_device())
             .env("GIT_CONFIG_NOSYSTEM", "1")
             .env("GIT_AUTHOR_NAME", "Test")
             .env("GIT_AUTHOR_EMAIL", "test@example.invalid")
@@ -51,7 +57,11 @@ impl Fixture {
                 "-c",
                 "commit.gpgsign=false",
                 "-c",
-                "core.hooksPath=/dev/null",
+                if cfg!(windows) {
+                    "core.hooksPath=NUL"
+                } else {
+                    "core.hooksPath=/dev/null"
+                },
             ])
             .args(args)
             .output()
@@ -188,6 +198,7 @@ fn states_worktrees_symlinks_bare_and_partial_failure() {
     );
     let z = f.repo("z");
     fs::write(z.join("untracked"), "x").unwrap();
+    #[cfg(unix)]
     symlink(&a, f.root.join("symlink")).unwrap();
     f.ok(&f.root, &["init", "--bare", "bare.git"]);
     fs::create_dir(f.root.join("ordinary")).unwrap();
@@ -244,6 +255,7 @@ fn hostile_environment_does_not_redirect_status() {
     assert_eq!(fields(&out, "repo"), ["repo", "main", "0", "-", "-"]);
 }
 
+#[cfg(unix)]
 #[test]
 fn odd_paths_and_rename_names_are_safe() {
     let f = Fixture::new();
@@ -317,6 +329,7 @@ fn merge_conflicts_count_as_paths_not_errors() {
     assert_eq!(fields(&out, "repo"), ["repo", "main", "1", "-", "-"]);
 }
 
+#[cfg(unix)]
 #[test]
 fn output_errors_return_failure() {
     let f = Fixture::new();
@@ -435,4 +448,149 @@ fn dirty_filter_flags_obey_separator_and_standalone_help() {
         assert_eq!(f.cli().args(args).output().unwrap().status.code(), Some(2));
     }
     assert!(text(&f.cli().arg("--help").output().unwrap()).contains("--dirty"));
+}
+
+#[test]
+fn json_reports_empty_root_failures_and_filtered_results() {
+    let f = Fixture::new();
+    let out = f.cli().arg("--json").output().unwrap();
+    assert!(out.status.success());
+    assert!(out.stderr.is_empty());
+    assert_eq!(
+        text(&out),
+        "{\"schema_version\":1,\"text_encoding\":\"escaped-os-bytes\",\"repositories\":[],\"errors\":[]}\n"
+    );
+    let clean = f.repo("clean");
+    f.commit(&clean);
+    let dirty = f.repo("dirty");
+    fs::write(dirty.join("file"), "untracked").unwrap();
+    let out = f.cli().args(["--json", "--dirty"]).output().unwrap();
+    assert!(out.status.success());
+    assert!(text(&out).contains("\"kind\":\"unborn\",\"name\":\"main\",\"oid\":null"));
+    assert!(text(&out).contains("\"changes\":1,\"upstream\":null,\"ahead\":null,\"behind\":null"));
+    assert!(!text(&out).contains("clean"));
+    let out = f.cli().args(["--json", "missing"]).output().unwrap();
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stderr.is_empty());
+    assert!(text(&out).contains("\"repositories\":[],\"errors\":[{"));
+}
+
+#[test]
+fn recursive_scan_stops_at_repositories_and_labels_duplicate_names() {
+    let f = Fixture::new();
+    for group in ["a", "b"] {
+        fs::create_dir(f.root.join(group)).unwrap();
+        let repo = f.repo(&format!("{group}/same"));
+        f.commit(&repo);
+    }
+    let outer = f.repo("outer");
+    f.commit(&outer);
+    let inner = f.repo("outer/inner");
+    f.commit(&inner);
+    fs::create_dir(f.root.join(".git")).unwrap();
+    f.repo(".git/hidden");
+    let bare = f.root.join("bare.git");
+    f.ok(&f.root, &["init", "--bare", "bare.git"]);
+    fs::create_dir(bare.join("hidden")).unwrap();
+    f.ok(&bare.join("hidden"), &["init", "-b", "main"]);
+    let serial = f.cli().args(["--recursive", "--json"]).output().unwrap();
+    assert!(serial.status.success(), "{}", text(&serial));
+    assert!(text(&serial).contains("same"));
+    assert!(!text(&serial).contains("inner"));
+    assert!(!text(&serial).contains("hidden"));
+    let parallel = f
+        .cli()
+        .args(["--recursive", "--json", "--jobs=4"])
+        .output()
+        .unwrap();
+    assert!(parallel.status.success());
+    assert_eq!(serial.stdout, parallel.stdout);
+    let table = f.cli().arg("--recursive").output().unwrap();
+    let path_a = Path::new("a").join("same");
+    assert!(text(&table).contains(&gscan::output::escape(
+        path_a.as_os_str().as_encoded_bytes()
+    )));
+    let shallow = f.run();
+    assert!(shallow.status.success());
+    assert!(!text(&shallow).contains("same"));
+}
+
+#[test]
+fn numeric_options_reject_missing_invalid_and_excessive_values() {
+    let f = Fixture::new();
+    for args in [
+        vec!["--jobs"],
+        vec!["--jobs", "0"],
+        vec!["--jobs=65"],
+        vec!["--timeout=0"],
+        vec!["--timeout=3601"],
+        vec!["--timeout", "-1"],
+        vec!["--jobs=hi"],
+        vec!["--timeout="],
+        vec!["--jobs=999999999999999999999999"],
+        vec!["--json", "--help"],
+    ] {
+        assert_eq!(f.cli().args(args).output().unwrap().status.code(), Some(2));
+    }
+    assert!(
+        f.cli()
+            .args(["--jobs", "64", "--timeout", "3600", "--json"])
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
+}
+
+#[test]
+fn explicit_fetch_refreshes_local_remote_and_failure_preserves_status() {
+    let f = Fixture::new();
+    let repo = f.repo("repo");
+    f.commit(&repo);
+    let remote = f.base.join("remote.git");
+    f.ok(&f.base, &["init", "--bare", remote.to_str().unwrap()]);
+    f.ok(
+        &repo,
+        &["remote", "add", "origin", remote.to_str().unwrap()],
+    );
+    f.ok(&repo, &["push", "-u", "origin", "main"]);
+    f.commit(&repo);
+    f.ok(&repo, &["push", "origin", "main"]);
+    f.ok(&repo, &["reset", "--hard", "HEAD~1"]);
+    f.ok(&repo, &["update-ref", "refs/remotes/origin/main", "HEAD"]);
+    assert_eq!(fields(&f.run(), "repo"), ["repo", "main", "0", "0", "0"]);
+    let before: Vec<_> = [".git/index", ".git/config", ".git/refs/heads/main"]
+        .iter()
+        .map(|p| fs::read(repo.join(p)).unwrap())
+        .collect();
+    let out = f.cli().args(["--fetch", "--jobs=4"]).output().unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert_eq!(fields(&out, "repo"), ["repo", "main", "0", "0", "1"]);
+    let after: Vec<_> = [".git/index", ".git/config", ".git/refs/heads/main"]
+        .iter()
+        .map(|p| fs::read(repo.join(p)).unwrap())
+        .collect();
+    assert_eq!(before, after);
+    f.ok(
+        &repo,
+        &[
+            "remote",
+            "set-url",
+            "origin",
+            f.base.join("missing.git").to_str().unwrap(),
+        ],
+    );
+    let out = f.cli().args(["--fetch", "--json"]).output().unwrap();
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stderr.is_empty());
+    assert!(text(&out).contains("git fetch failed"));
+    assert!(text(&out).contains("\"behind\":1"));
+    let out = f.cli().args(["--fetch", "--dirty"]).output().unwrap();
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty());
+    assert!(!out.stderr.is_empty());
 }

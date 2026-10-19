@@ -25,6 +25,10 @@ pub fn diagnostic(error: &Failure) -> String {
 }
 
 pub fn table(repositories: &[RepoStatus]) -> String {
+    table_with_root(repositories, None)
+}
+
+pub fn table_with_root(repositories: &[RepoStatus], root: Option<&std::path::Path>) -> String {
     let mut rows = vec![["REPOSITORY", "BRANCH", "CHANGES", "AHEAD", "BEHIND"].map(str::to_owned)];
     for repo in repositories {
         let branch = match &repo.branch {
@@ -38,9 +42,9 @@ pub fn table(repositories: &[RepoStatus]) -> String {
             .unwrap_or_else(|| ("-".into(), "-".into()));
         rows.push([
             escape(
-                repo.path
-                    .file_name()
-                    .unwrap_or(repo.path.as_os_str())
+                root.and_then(|root| repo.path.strip_prefix(root).ok())
+                    .map(|p| p.as_os_str())
+                    .unwrap_or_else(|| repo.path.file_name().unwrap_or(repo.path.as_os_str()))
                     .as_encoded_bytes(),
             ),
             branch,
@@ -73,6 +77,63 @@ pub fn table(repositories: &[RepoStatus]) -> String {
         );
     }
     output
+}
+
+fn quote(value: &str) -> String {
+    let mut result = String::from("\"");
+    for ch in value.chars() {
+        match ch {
+            '"' => result.push_str("\\\""),
+            '\\' => result.push_str("\\\\"),
+            '\u{0}'..='\u{1f}' => {
+                let _ = write!(result, "\\u{:04x}", ch as u32);
+            }
+            _ => result.push(ch),
+        }
+    }
+    result.push('"');
+    result
+}
+
+/// Text fields carry the same reversible ASCII representation as the table.
+pub fn json(report: &crate::scan::ScanReport, root: &std::path::Path) -> String {
+    let mut rows = Vec::new();
+    for repo in &report.repositories {
+        let (kind, name, oid) = match &repo.branch {
+            Branch::Named(name) => ("named", quote(&escape(name)), "null".to_owned()),
+            Branch::Unborn(name) => ("unborn", quote(&escape(name)), "null".to_owned()),
+            Branch::Detached(oid) => ("detached", "null".to_owned(), quote(&escape(oid))),
+        };
+        let (ahead, behind) = repo
+            .comparison
+            .map(|(a, b)| (a.to_string(), b.to_string()))
+            .unwrap_or_else(|| ("null".into(), "null".into()));
+        let upstream = repo
+            .upstream
+            .as_ref()
+            .map(|s| quote(&escape(s)))
+            .unwrap_or_else(|| "null".into());
+        let path = quote(&escape(repo.path.as_os_str().as_encoded_bytes()));
+        let relative = repo.path.strip_prefix(root).unwrap_or(&repo.path);
+        let name_path = quote(&escape(relative.as_os_str().as_encoded_bytes()));
+        rows.push(format!("{{\"path\":{path},\"name\":{name_path},\"branch\":{{\"kind\":\"{kind}\",\"name\":{name},\"oid\":{oid}}},\"changes\":{},\"upstream\":{upstream},\"ahead\":{ahead},\"behind\":{behind}}}", repo.changed));
+    }
+    let errors: Vec<_> = report
+        .failures
+        .iter()
+        .map(|e| {
+            format!(
+                "{{\"path\":{},\"message\":{}}}",
+                quote(&escape(e.path.as_os_str().as_encoded_bytes())),
+                quote(&escape(&e.message))
+            )
+        })
+        .collect();
+    format!(
+        "{{\"schema_version\":1,\"text_encoding\":\"escaped-os-bytes\",\"repositories\":[{}],\"errors\":[{}]}}\n",
+        rows.join(","),
+        errors.join(",")
+    )
 }
 
 #[cfg(test)]
