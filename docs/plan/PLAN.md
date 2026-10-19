@@ -47,11 +47,11 @@ Task 06 delivered MIT-licensed v0.1.0 archives, SHA256SUMS, installation docs
 and tag-triggered draft releases. Publishing a draft remains a separate
 maintainer action.
 
-## Native installation — in progress
+## Native installation — awaiting merge
 
 | ID | Task | Depends on | Status |
 |---|---|---|---|
-| 07 | [Debian packaging](tasks/07-debian-package.md) | 06 | Implemented; awaiting PR/native CI |
+| 07 | [Debian packaging](tasks/07-debian-package.md) | 06 | Verified; awaiting PR merge |
 
 ## Now
 

@@ -2,7 +2,8 @@
 
 ## Requirements and downloads
 
-No Rust toolchain is needed. Install Git first and confirm `git --version` works.
+No Rust toolchain is needed. For archive installation, install Git first and
+confirm `git --version` works. The Debian package lets APT resolve Git automatically.
 Choose the archive matching your OS and CPU; these are native builds, not universal
 binaries. Linux ARM64 and Intel Mac archives are not provided in v0.1.1.
 

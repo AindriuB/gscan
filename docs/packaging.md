@@ -15,8 +15,8 @@ not change repository visibility.
 Linux packages are GNU/glibc builds, not musl builds. Windows uses
 `-C target-feature=+crt-static`. macOS sets `MACOSX_DEPLOYMENT_TARGET=14.0`.
 These are the tested baselines, not a promise that older platforms will work.
-No Intel Mac, Linux ARM64, platform signing/notarization or package-manager
-publication is included in this first release.
+Intel Mac, Linux ARM64, platform signing/notarization, an APT repository, and
+Homebrew/WinGet distribution remain outside this release.
 
 Each archive has one `gscan-<version>-<target>/` directory containing:
 

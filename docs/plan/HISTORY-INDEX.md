@@ -4,6 +4,7 @@ One row per dated heading in HISTORY.md. Read the matching section on demand.
 
 | Date | Task IDs | Summary | Heading |
 |---|---|---|---|
+| 2026-10-19 | 07 | Debian package verified; submitted for merge | 2026-10-19 — Debian package implementation and verification |
 | 2026-10-19 | — | Generic documentation and visibility-independent draft creation | 2026-10-19 — Portable documentation and release preparation |
 | 2026-10-19 | 06 | MIT native archives, verified checksums and private v0.1.0 draft | 2026-10-19 — Verified packages and private draft release |
 | 2026-10-19 | 05 | Extended scan features and three-platform CI; packaging backlogged as 06 | 2026-10-19 — Extended scanning and native platform verification |

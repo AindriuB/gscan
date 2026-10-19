@@ -1,6 +1,6 @@
 # 07 — Debian packaging
 
-**Status:** Implemented; awaiting PR/native CI
+**Status:** Verified; awaiting PR merge
 
 **Depends on:** 06
 
@@ -24,3 +24,9 @@ custom installers, maintainer scripts, services or shell-profile changes.
 
 Local validation: 30 Rust tests, formatting, Clippy and 19 Python tests pass.
 Debian-specific tests require Linux/dpkg and are skipped on other platforms.
+
+Native verification at `18b3bdb`: all three package jobs and combined checksum
+verification passed in run 39241887388. The official Ubuntu 22.04 package passed
+its disposable-container lifecycle test. Local lifecycle verification also passed
+on Ubuntu 24.04. The change is submitted through a pull request; no tag or release
+has been created for v0.1.1.
