@@ -1,0 +1,120 @@
+name: Packages
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: packages-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    name: Package (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            rustflags: ''
+          - os: macos-14
+            target: aarch64-apple-darwin
+            rustflags: ''
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            rustflags: '-C target-feature=+crt-static'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    env:
+      TARGET: ${{ matrix.target }}
+      RUSTFLAGS: ${{ matrix.rustflags }}
+      MACOSX_DEPLOYMENT_TARGET: '14.0'
+      RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Configure Rust
+        run: |
+          rustup update stable --no-self-update
+          rustup default stable
+          rustup target add "$TARGET"
+          rustup component add rustfmt clippy
+      - name: Verify sources and packaging contracts
+        run: |
+          cargo fmt -- --check
+          cargo clippy --locked --offline --all-targets --target "$TARGET" -- -D warnings
+          cargo test --locked --offline --target "$TARGET"
+          python -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Build and test extracted archive
+        run: |
+          cargo build --release --locked --offline --target "$TARGET"
+          python scripts/package.py build --target "$TARGET" --tag "$RELEASE_TAG"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: package-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+  assemble:
+    name: Verify all archives and checksums
+    needs: build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    env:
+      RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: package-*
+          merge-multiple: true
+          path: dist
+      - run: python scripts/package.py manifest --tag "$RELEASE_TAG"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-assets
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+  draft:
+    name: Create private draft release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: assemble
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ github.ref_name }}
+      GH_REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-assets
+          path: dist
+      - run: python scripts/draft_release.py --tag "$RELEASE_TAG" --repo "$GH_REPO"

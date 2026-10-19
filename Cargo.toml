@@ -3,6 +3,8 @@ name = "gscan"
 version = "0.1.0"
 edition = "2024"
 description = "Survey local Git repositories from the command line"
+license = "MIT"
+repository = "https://github.com/AindriuB/gscan"
 publish = false
 
 [dependencies]
