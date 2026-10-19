@@ -37,20 +37,21 @@ Windows ([run](https://github.com/AindriuB/gscan/actions/runs/39233162807)).
 Platform-specific fixtures account for different test counts. One ignored test
 function is an explicitly launched subprocess fixture, not missing coverage.
 
-## Packaging — in progress
+## Packaging — complete
 
 | ID | Task | Depends on | Status |
 |---|---|---|---|
-| 06 | [Packaging and releases](tasks/06-packaging.md) | 05 | In progress: native archive verification |
+| 06 | [Packaging and releases](tasks/06-packaging.md) | 05 | Complete / merged |
 
-Task 06 implements MIT-licensed v0.1.0 archives, SHA256SUMS, installation docs
+Task 06 delivered MIT-licensed v0.1.0 archives, SHA256SUMS, installation docs
 and tag-triggered private draft releases. Publishing a draft remains a separate
 maintainer action.
 
 ## Now
 
-Verify all native archives, create the v0.1.0 tag, and confirm its private draft
-release and downloaded checksums.
+Tasks 01–06 are complete. The private v0.1.0 draft and downloaded checksums
+are verified; see [task 06](tasks/06-packaging.md) for evidence.
+Publishing the draft remains a separate maintainer decision.
 
 ## Someday
 

@@ -2,6 +2,26 @@
 
 Completed work only, newest first. Consult HISTORY-INDEX.md before reading entries.
 
+## 2026-10-19 — Verified packages and private draft release
+
+Task 06 delivers MIT-licensed v0.1.0 archives for Linux x86_64 GNU, macOS Apple
+Silicon and Windows x86_64 MSVC, with installation guidance, source metadata
+and SHA256SUMS. A tag-triggered workflow creates private drafts only; crates.io
+publishing remains disabled. Source `3145975` is tagged `v0.1.0`.
+
+**Validation:** the [tag workflow](https://github.com/AindriuB/gscan/actions/runs/39235973876)
+passes native Rust checks, 13 Python packaging tests, extracted-binary smoke
+checks without Rust on PATH, and aggregate checksum verification. Linux passes
+30 Rust tests. The private draft contains exactly the three archives and
+SHA256SUMS. Downloaded hashes, contents and source commits all match; the
+downloaded Linux binary also passes version and Git fixture scanning.
+
+**Cost:** Windows checkout line endings require normalized archive documents.
+Older procps on the Ubuntu 22.04 baseline requires an explicit `--` before the
+negative process-group ID during timeout cleanup. Packages are unsigned, require
+Git at runtime, and support only the documented architectures and OS baselines.
+The release remains a draft pending a separate publication decision.
+
 ## 2026-10-19 — Extended scanning and native platform verification
 
 Task 05 adds JSON output, recursive discovery, bounded inspection workers,
