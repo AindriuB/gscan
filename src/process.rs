@@ -18,12 +18,14 @@ impl Capture {
                 std::process::id(),
                 NEXT.fetch_add(1, Ordering::Relaxed)
             ));
-            let mut builder = fs::DirBuilder::new();
+            let builder = fs::DirBuilder::new();
             #[cfg(unix)]
-            {
+            let builder = {
                 use std::os::unix::fs::DirBuilderExt;
+                let mut builder = builder;
                 builder.mode(0o700);
-            }
+                builder
+            };
             match builder.create(&path) {
                 Ok(()) => return Ok(Self(path)),
                 Err(e) if e.kind() == io::ErrorKind::AlreadyExists => continue,
@@ -104,8 +106,9 @@ pub fn run(command: &mut Command, timeout: Duration) -> io::Result<Output> {
         command.process_group(0);
     }
     let start = Instant::now();
-    let mut child = Running(command.spawn()?);
+    let spawned = command.spawn();
     command.stdout(Stdio::null()).stderr(Stdio::null());
+    let mut child = Running(spawned?);
     let status = loop {
         if let Some(status) = child.0.try_wait()? {
             break status;

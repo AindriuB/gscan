@@ -1,8 +1,10 @@
-#[cfg(unix)]
+#[cfg(target_os = "linux")]
 use std::ffi::OsString;
 use std::fs;
+#[cfg(target_os = "linux")]
+use std::os::unix::ffi::OsStringExt;
 #[cfg(unix)]
-use std::os::unix::{ffi::OsStringExt, fs::symlink};
+use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -255,7 +257,7 @@ fn hostile_environment_does_not_redirect_status() {
     assert_eq!(fields(&out, "repo"), ["repo", "main", "0", "-", "-"]);
 }
 
-#[cfg(unix)]
+#[cfg(target_os = "linux")]
 #[test]
 fn odd_paths_and_rename_names_are_safe() {
     let f = Fixture::new();
@@ -329,7 +331,7 @@ fn merge_conflicts_count_as_paths_not_errors() {
     assert_eq!(fields(&out, "repo"), ["repo", "main", "1", "-", "-"]);
 }
 
-#[cfg(unix)]
+#[cfg(target_os = "linux")]
 #[test]
 fn output_errors_return_failure() {
     let f = Fixture::new();
@@ -593,4 +595,15 @@ fn explicit_fetch_refreshes_local_remote_and_failure_preserves_status() {
     assert_eq!(out.status.code(), Some(1));
     assert!(out.stdout.is_empty());
     assert!(!out.stderr.is_empty());
+}
+
+#[test]
+fn unicode_paths_work_on_native_platforms() {
+    let f = Fixture::new();
+    let repo = f.repo("café space");
+    fs::write(repo.join("résumé"), "untracked").unwrap();
+    let out = f.cli().args(["--json", "--jobs=2"]).output().unwrap();
+    assert!(out.status.success());
+    assert!(text(&out).contains("caf\\\\xc3\\\\xa9 space"));
+    assert!(text(&out).contains("\"changes\":1"));
 }
