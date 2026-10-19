@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 import package
+import debian
 
 
 def main():
@@ -32,7 +33,7 @@ def main():
         if visibility not in {"PRIVATE", "PUBLIC"}:
             raise ValueError("unsupported repository visibility")
         assets = [args.output / package.filename(release_version, target) for target in package.TARGETS]
-        assets.append(args.output / "SHA256SUMS")
+        assets.extend([args.output / debian.filename(release_version), args.output / "SHA256SUMS"])
         allowed = {path.name for path in assets}
         query = subprocess.run(["gh", "release", "view", args.tag, "--repo", args.repo,
                                 "--json", "isDraft,assets"], capture_output=True, text=True)

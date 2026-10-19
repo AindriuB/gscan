@@ -80,7 +80,9 @@ python tests/validate_json.py target/debug/gscan
 
 On Windows the executable path ends in `.exe`. Install from source with
 `cargo install --path . --offline`, or use the verified release archives described
-in the [installation guide](docs/installation.md). Archives cover Linux x86_64
+in the [installation guide](docs/installation.md). Debian/Ubuntu users can install
+the `.deb` with `sudo apt install ./gscan_0.1.1-1_amd64.deb`; it installs to
+`/usr/bin` and declares Git and library dependencies. Archives cover Linux x86_64
 (glibc 2.35+), macOS 14+ Apple Silicon and Windows x86_64; Rust is not needed to
 run them. Git is still required. Release automation creates drafts for
 review; it does not publish them automatically.

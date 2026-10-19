@@ -209,15 +209,19 @@ def manifest(args):
     release_version = version()
     validate_tag(args.tag, release_version)
     commit = run(["git", "rev-parse", "HEAD"], cwd=ROOT)
-    expected = {filename(release_version, target) for target in TARGETS}
-    found = {p.name for p in args.output.iterdir() if p.name.endswith((".tar.gz", ".zip"))}
+    import debian
+    expected = {filename(release_version, target) for target in TARGETS} | {debian.filename(release_version)}
+    found = {p.name for p in args.output.iterdir() if p.name.endswith((".tar.gz", ".zip", ".deb"))}
     if found != expected:
-        raise ValueError(f"expected exactly three target archives, found {sorted(found)}")
+        raise ValueError(f"expected three target archives and one Debian package, found {sorted(found)}")
     lines = []
     for target in sorted(TARGETS):
         archive = args.output / filename(release_version, target)
         read_archive(archive, target, release_version, commit)
         lines.append(check_checksum(archive))
+    deb = args.output / debian.filename(release_version)
+    debian.verify(deb, args.output / filename(release_version, debian.TARGET), release_version, commit)
+    lines.append(check_checksum(deb))
     (args.output / "SHA256SUMS").write_text("".join(lines), newline="\n")
     print("Verified all target archives and wrote SHA256SUMS")
 

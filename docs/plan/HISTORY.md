@@ -2,6 +2,25 @@
 
 Completed work only, newest first. Consult HISTORY-INDEX.md before reading entries.
 
+## 2026-10-19 — Debian package implementation and verification
+
+Task 07 implements an amd64 `.deb` for v0.1.1, installing to `/usr/bin/gscan`
+with Git and detected runtime dependencies. The release gate checks package
+metadata, root ownership, permissions and exact Linux archive payload parity.
+SHA256SUMS and draft creation include the `.deb` alongside existing archives.
+The implementation is verified and submitted for merge; v0.1.1 is not released.
+
+**Validation:** `18b3bdb` passes 30 local Rust tests, formatting, Clippy and 19
+Python tests. Native package workflow 39241887388 passed Linux, macOS, Windows
+and combined checksum verification. Disposable Ubuntu 22.04 (CI) and Ubuntu 24.04
+(local) tests passed dependency installation, upgrade, reinstall, scanning without
+Rust, and removal while preserving unrelated files and Git.
+
+**Cost:** Debian packaging requires dpkg build tools and native Linux verification.
+Local binaries can require newer libc than the official Ubuntu 22.04 build.
+Downloads are individual packages; no APT update repository is configured.
+Existing user-installed copies may take precedence on PATH and are not removed.
+
 ## 2026-10-19 — Portable documentation and release preparation
 
 Replaced machine-specific paths and repository examples with generic examples,

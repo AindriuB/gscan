@@ -14,7 +14,8 @@ Default scans are read-only and use locally cached upstream refs. Only `--fetch`
 contacts remotes and writes objects/refs. `--recursive` stops at repository boundaries.
 
 Read INSTALL.md for supported platforms, checksum verification, installation,
-upgrades and removal. BUILD.json records this archive's version, target, source
+upgrades and removal. A Debian/Ubuntu amd64 package is also available for
+installation through APT. BUILD.json records this archive's version, target, source
 commit and compiler. The MIT license is in LICENSE.
 
 Find source and documentation in the repository that provided this release.

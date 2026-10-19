@@ -70,3 +70,7 @@ refuses published releases. `.github/workflows/release.yml` builds the three
 native packages, assembles checksums, and limits repository-write permission to
 the tag-triggered draft job. User installation is documented separately from
 maintainer release automation; see [packaging.md](packaging.md).
+
+`scripts/debian.py` wraps the verified Linux archive in an amd64 Debian package.
+The aggregate release gate compares its payload to that archive before publishing
+checksums or creating a draft. Package lifecycle checks run in a disposable container.
