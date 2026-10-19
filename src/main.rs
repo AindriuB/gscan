@@ -4,10 +4,10 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-const HELP: &str = "Usage: gscan [DIRECTORY]\n       gscan --help | --version\n\nScan immediate child Git repositories (default: current directory).\nShows changed paths and ahead/behind counts from locally cached refs.\nRead-only: does not fetch. Use -- before a path beginning with '-'.\n";
+const HELP: &str = "Usage: gscan [--dirty] [DIRECTORY]\n       gscan --help | --version\n\nScan immediate child Git repositories (default: current directory).\nShows changed paths and ahead/behind counts from locally cached refs.\n--dirty shows only repositories with changed paths (not merely unpushed commits).\nRead-only: does not fetch. Use -- before a path beginning with '-'.\n";
 
 enum Action {
-    Scan(PathBuf),
+    Scan { root: PathBuf, dirty_only: bool },
     Help,
     Version,
 }
@@ -23,9 +23,14 @@ fn arguments(args: Vec<OsString>) -> Result<Action, &'static str> {
     }
     let mut positional = None;
     let mut options = true;
+    let mut dirty_only = false;
     for arg in args {
         if options && arg == "--" {
             options = false;
+            continue;
+        }
+        if options && arg == "--dirty" {
+            dirty_only = true;
             continue;
         }
         if options && arg.as_encoded_bytes().starts_with(b"-") {
@@ -35,9 +40,10 @@ fn arguments(args: Vec<OsString>) -> Result<Action, &'static str> {
             return Err("expected at most one directory");
         }
     }
-    Ok(Action::Scan(
-        positional.unwrap_or_else(|| PathBuf::from(".")),
-    ))
+    Ok(Action::Scan {
+        root: positional.unwrap_or_else(|| PathBuf::from(".")),
+        dirty_only,
+    })
 }
 
 fn run(out: &mut impl Write, err: &mut impl Write) -> io::Result<u8> {
@@ -48,7 +54,7 @@ fn run(out: &mut impl Write, err: &mut impl Write) -> io::Result<u8> {
             return Ok(2);
         }
     };
-    let root = match action {
+    let (root, dirty_only) = match action {
         Action::Help => {
             write!(out, "{HELP}")?;
             return Ok(0);
@@ -57,19 +63,27 @@ fn run(out: &mut impl Write, err: &mut impl Write) -> io::Result<u8> {
             writeln!(out, "gscan {}", env!("CARGO_PKG_VERSION"))?;
             return Ok(0);
         }
-        Action::Scan(root) => root,
+        Action::Scan { root, dirty_only } => (root, dirty_only),
     };
-    let report = match scan::scan(&root) {
+    let mut report = match scan::scan(&root) {
         Ok(report) => report,
         Err(error) => {
             write!(err, "{}", output::diagnostic(&error))?;
             return Ok(1);
         }
     };
+    let had_repositories = !report.repositories.is_empty();
+    if dirty_only {
+        report.repositories.retain(|repo| repo.changed > 0);
+    }
     if !report.repositories.is_empty() {
         write!(out, "{}", output::table(&report.repositories))?;
     } else if report.failures.is_empty() {
-        writeln!(out, "No repositories found.")?;
+        if dirty_only && had_repositories {
+            writeln!(out, "No dirty repositories found.")?;
+        } else {
+            writeln!(out, "No repositories found.")?;
+        }
     }
     for error in &report.failures {
         write!(err, "{}", output::diagnostic(error))?;

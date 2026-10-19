@@ -358,3 +358,81 @@ fn submodules_count_once_and_honour_ignore_config() {
     f.ok(&repo, &["config", "submodule.sub.ignore", "all"]);
     assert_eq!(fields(&f.run(), "repo"), ["repo", "main", "0", "-", "-"]);
 }
+
+#[test]
+fn dirty_filter_selects_changed_paths_not_unpushed_commits() {
+    let f = Fixture::new();
+    let clean = f.repo("clean");
+    f.commit(&clean);
+    let remote = f.base.join("remote.git");
+    f.ok(&f.base, &["init", "--bare", remote.to_str().unwrap()]);
+    f.ok(
+        &clean,
+        &["remote", "add", "origin", remote.to_str().unwrap()],
+    );
+    f.ok(&clean, &["push", "-u", "origin", "main"]);
+    f.commit(&clean);
+    let dirty = f.repo("dirty");
+    fs::write(dirty.join("file"), "untracked").unwrap();
+    let out = f.cli().arg("--dirty").output().unwrap();
+    assert!(out.status.success());
+    assert!(out.stderr.is_empty());
+    assert_eq!(text(&out).lines().count(), 2);
+    assert_eq!(
+        fields(&out, "dirty"),
+        ["dirty", "main", "(unborn)", "1", "-", "-"]
+    );
+    assert!(!text(&out).contains("clean"));
+    fs::write(clean.join("changed"), "untracked").unwrap();
+    let out = f.cli().arg("--dirty").output().unwrap();
+    assert_eq!(fields(&out, "clean"), ["clean", "main", "1", "1", "0"]);
+}
+
+#[test]
+fn dirty_filter_distinguishes_empty_clean_and_failed_scans() {
+    let f = Fixture::new();
+    let out = f.cli().arg("--dirty").output().unwrap();
+    assert!(out.status.success());
+    assert_eq!(text(&out), "No repositories found.\n");
+    let clean = f.repo("clean");
+    f.commit(&clean);
+    let out = f.cli().arg("--dirty").output().unwrap();
+    assert!(out.status.success());
+    assert_eq!(text(&out), "No dirty repositories found.\n");
+    fs::create_dir(f.root.join("broken")).unwrap();
+    fs::write(f.root.join("broken/.git"), "broken metadata").unwrap();
+    let out = f.cli().arg("--dirty").output().unwrap();
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("broken"));
+    fs::write(clean.join("file"), "untracked").unwrap();
+    let out = f.cli().arg("--dirty").output().unwrap();
+    assert_eq!(out.status.code(), Some(1));
+    assert_eq!(fields(&out, "clean"), ["clean", "main", "1", "-", "-"]);
+    assert!(!out.stderr.is_empty());
+}
+
+#[test]
+fn dirty_filter_flags_obey_separator_and_standalone_help() {
+    let f = Fixture::new();
+    let dirty = f.repo("dirty");
+    fs::write(dirty.join("file"), "x").unwrap();
+    for args in [
+        vec!["--dirty", "."],
+        vec![".", "--dirty"],
+        vec!["--dirty", "--dirty"],
+        vec!["--dirty", "--", "."],
+    ] {
+        let out = f.cli().args(args).output().unwrap();
+        assert!(out.status.success());
+        assert_eq!(text(&out).lines().count(), 2);
+    }
+    fs::create_dir(f.root.join("--dirty")).unwrap();
+    let out = f.cli().args(["--", "--dirty"]).output().unwrap();
+    assert!(out.status.success());
+    assert_eq!(text(&out), "No repositories found.\n");
+    for args in [["--dirty", "--help"], ["--version", "--dirty"]] {
+        assert_eq!(f.cli().args(args).output().unwrap().status.code(), Some(2));
+    }
+    assert!(text(&f.cli().arg("--help").output().unwrap()).contains("--dirty"));
+}
