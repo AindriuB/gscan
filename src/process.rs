@@ -60,8 +60,9 @@ impl Running {
         #[cfg(unix)]
         {
             // Each child is a new process group, including normal Git helpers.
+            // The separator is essential: older procps can truncate a bare negative PID.
             let _ = Command::new("/bin/kill")
-                .args(["-KILL", &format!("-{}", self.0.id())])
+                .args(["-KILL", "--", &format!("-{}", self.0.id())])
                 .stdin(Stdio::null())
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())

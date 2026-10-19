@@ -4,7 +4,7 @@
 
 **Depends on:** 05
 
-**Owns:** `Cargo.toml`, `LICENSE`, `.gitignore`, `scripts/package.py`,
+**Owns:** `src/process.rs` (Unix timeout cleanup compatibility), `Cargo.toml`, `LICENSE`, `.gitignore`, `scripts/package.py`,
 `scripts/draft_release.py`, `packaging/README.md`, `tests/test_*.py`,
 `.github/workflows/release.yml`, `README.md`, `docs/**`.
 
@@ -45,3 +45,9 @@ published releases, refuse public repositories, and allow safe draft retries.
   unsigned platform binaries and the separate publication step.
 
 Baseline: `930b99a`; main's three-platform CI passed before this task.
+
+## Compatibility correction discovered during packaging
+
+Ubuntu 22.04's older procps can misparse a negative process-group argument without
+an option terminator. Timeout cleanup now uses `kill -KILL -- -PGID`; native
+package tests must pass on the baseline runner before the release is tagged.

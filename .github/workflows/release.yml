@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: packages-${{ github.ref }}
+  group: packages-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: false
 jobs:
   build:
